@@ -1,0 +1,124 @@
+version: '3'
+
+set: [errexit, pipefail, nounset]
+
+dotenv: ['.env']
+
+vars:
+  UV: uv
+  CMD: 'uvicorn app.main:app --host 0.0.0.0 --port 8000'
+
+tasks:
+  default:
+    desc: Install dependencies
+    cmds:
+      - task: install
+
+  _check-uv:
+    internal: true
+    preconditions:
+      - sh: command -v {{.UV}}
+        msg: uv not found — https://github.com/astral-sh/uv
+
+  _check-pkg:
+    internal: true
+    preconditions:
+      - sh: test -n "{{.PKG}}"
+        msg: PKG required, e.g. task add PKG=<name>
+
+  install:
+    desc: Install dependencies
+    deps: [_check-uv]
+    cmd: '{{.UV}} sync {{.CLI_ARGS}}'
+
+  dev:
+    desc: Run FastAPI app with uvicorn and reload
+    deps: [_check-uv]
+    cmd: '{{.UV}} run {{.CMD}} --reload {{.CLI_ARGS}}'
+
+  add:
+    desc: Add package (PKG=name required)
+    deps: [_check-uv, _check-pkg]
+    cmd: '{{.UV}} add {{.PKG}} {{.CLI_ARGS}}'
+
+  remove:
+    desc: Remove package (PKG=name required)
+    deps: [_check-uv, _check-pkg]
+    cmd: '{{.UV}} remove {{.PKG}} {{.CLI_ARGS}}'
+
+  update:
+    desc: Upgrade dependencies
+    deps: [_check-uv]
+    cmd: '{{.UV}} sync --upgrade {{.CLI_ARGS}}'
+
+  lock:
+    desc: Refresh lockfile
+    deps: [_check-uv]
+    cmd: '{{.UV}} lock {{.CLI_ARGS}}'
+
+  run:
+    desc: Run arbitrary command via uv (default)
+    aliases: [exec]
+    deps: [_check-uv]
+    cmd: '{{.UV}} run {{.CMD}} {{.CLI_ARGS}}'
+
+  clean:
+    desc: Remove .venv and uv.lock
+    cmds:
+      - rm -rf .venv uv.lock
+
+  format-code:
+    desc: Format code with ruff
+    deps: [_check-uv]
+    cmd: '{{.UV}} run ruff format {{.CLI_ARGS}}'
+
+  format-imports:
+    desc: Sort imports with ruff
+    deps: [_check-uv]
+    cmd: '{{.UV}} run ruff check --select I --fix {{.CLI_ARGS}}'
+
+  format-fix:
+    desc: Auto-fix linting issues
+    deps: [_check-uv]
+    cmd: '{{.UV}} run ruff check --fix {{.CLI_ARGS}}'
+
+  format:
+    desc: Format all (imports + code)
+    cmds:
+      - task: format-imports
+      - task: format-code
+
+  lint-ruff:
+    desc: Lint code with ruff
+    deps: [_check-uv]
+    cmd: '{{.UV}} run ruff check {{.CLI_ARGS}}'
+
+  lint-types:
+    desc: Type check with pyright
+    deps: [_check-uv]
+    cmd: '{{.UV}} run pyright {{.CLI_ARGS}}'
+
+  lint:
+    desc: Lint all (ruff + types)
+    cmds:
+      - task: lint-ruff
+      - task: lint-types
+
+  lint-format:
+    desc: Format and fix all issues
+    cmds:
+      - task: format-imports
+      - task: format-code
+      - task: format-fix
+
+  docker-compose-up:
+    desc: Start docker-compose services
+    cmd: docker compose up {{.CLI_ARGS}}
+
+  docker-compose-down:
+    desc: Stop docker-compose services
+    cmd: docker compose down {{.CLI_ARGS}}
+
+  docker-compose-build:
+    desc: Build docker-compose services
+    cmd: docker compose build {{.CLI_ARGS}}
