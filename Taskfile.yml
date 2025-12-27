@@ -1,12 +1,13 @@
-version: '3'
+version: "3"
 
 set: [errexit, pipefail, nounset]
 
-dotenv: ['.env']
+dotenv: [".env"]
 
 vars:
   UV: uv
-  CMD: 'uvicorn app.main:app --host 0.0.0.0 --port 8000'
+  UNVICORN: "uvicorn app.main:app"
+  DC: "docker compose"
 
 tasks:
   default:
@@ -20,105 +21,73 @@ tasks:
       - sh: command -v {{.UV}}
         msg: uv not found — https://github.com/astral-sh/uv
 
-  _check-pkg:
-    internal: true
-    preconditions:
-      - sh: test -n "{{.PKG}}"
-        msg: PKG required, e.g. task add PKG=<name>
+  uv:
+    desc: Run any uv command (advanced/manual use)
+    deps: [_check-uv]
+    cmd: "{{.UV}} {{.CLI_ARGS}}"
 
   install:
     desc: Install dependencies
     deps: [_check-uv]
-    cmd: '{{.UV}} sync {{.CLI_ARGS}}'
-
-  dev:
-    desc: Run FastAPI app with uvicorn and reload
-    deps: [_check-uv]
-    cmd: '{{.UV}} run {{.CMD}} --reload {{.CLI_ARGS}}'
-
-  add:
-    desc: Add package (PKG=name required)
-    deps: [_check-uv, _check-pkg]
-    cmd: '{{.UV}} add {{.PKG}} {{.CLI_ARGS}}'
-
-  remove:
-    desc: Remove package (PKG=name required)
-    deps: [_check-uv, _check-pkg]
-    cmd: '{{.UV}} remove {{.PKG}} {{.CLI_ARGS}}'
-
-  update:
-    desc: Upgrade dependencies
-    deps: [_check-uv]
-    cmd: '{{.UV}} sync --upgrade {{.CLI_ARGS}}'
-
-  lock:
-    desc: Refresh lockfile
-    deps: [_check-uv]
-    cmd: '{{.UV}} lock {{.CLI_ARGS}}'
+    cmds:
+      - task: uv
+        vars:
+          CLI_ARGS: "sync {{.CLI_ARGS}}"
 
   run:
     desc: Run arbitrary command via uv (default)
     aliases: [exec]
     deps: [_check-uv]
-    cmd: '{{.UV}} run {{.CMD}} {{.CLI_ARGS}}'
+    cmd: "{{.UV}} run {{.UNVICORN}} {{.CLI_ARGS}}"
 
-  clean:
-    desc: Remove .venv and uv.lock
+  dev:
+    desc: Run FastAPI app with uvicorn and reload
+    deps: [_check-uv]
     cmds:
-      - rm -rf .venv uv.lock
-
-  format-code:
-    desc: Format code with ruff
-    deps: [_check-uv]
-    cmd: '{{.UV}} run ruff format {{.CLI_ARGS}}'
-
-  format-imports:
-    desc: Sort imports with ruff
-    deps: [_check-uv]
-    cmd: '{{.UV}} run ruff check --select I --fix {{.CLI_ARGS}}'
-
-  format-fix:
-    desc: Auto-fix linting issues
-    deps: [_check-uv]
-    cmd: '{{.UV}} run ruff check --fix {{.CLI_ARGS}}'
+      - task: run
+        vars: { CLI_ARGS: "--reload {{.CLI_ARGS}}" }
 
   format:
     desc: Format all (imports + code)
+    deps: [_check-uv]
     cmds:
-      - task: format-imports
-      - task: format-code
-
-  lint-ruff:
-    desc: Lint code with ruff
-    deps: [_check-uv]
-    cmd: '{{.UV}} run ruff check {{.CLI_ARGS}}'
-
-  lint-types:
-    desc: Type check with pyright
-    deps: [_check-uv]
-    cmd: '{{.UV}} run pyright {{.CLI_ARGS}}'
+      - "{{.UV}} run ruff check --select I --fix {{.CLI_ARGS}}"
+      - "{{.UV}} run ruff format {{.CLI_ARGS}}"
 
   lint:
     desc: Lint all (ruff + types)
+    deps: [_check-uv]
     cmds:
-      - task: lint-ruff
-      - task: lint-types
+      - "{{.UV}} run ruff check {{.CLI_ARGS}}"
+      - "{{.UV}} run pyright {{.CLI_ARGS}}"
 
   lint-format:
     desc: Format and fix all issues
     cmds:
-      - task: format-imports
-      - task: format-code
-      - task: format-fix
+      - task: format
+      - task: "{{.UV}} run ruff check --fix {{.CLI_ARGS}}"
+
+  docker-compose:
+    desc: Docker-compose services
+    cmd: "{{.DC}} {{.CLI_ARGS}}"
 
   docker-compose-up:
     desc: Start docker-compose services
-    cmd: docker compose up {{.CLI_ARGS}}
+    cmds:
+      - task: docker-compose
+        vars:
+          CLI_ARGS: "up -d {{.CLI_ARGS}}"
 
-  docker-compose-down:
+  docker-compose-stop:
     desc: Stop docker-compose services
-    cmd: docker compose down {{.CLI_ARGS}}
+    cmds:
+      - task: docker-compose
+        vars:
+          CLI_ARGS: "down {{.CLI_ARGS}}"
 
-  docker-compose-build:
-    desc: Build docker-compose services
-    cmd: docker compose build {{.CLI_ARGS}}
+  docker-compose-logs:
+    desc: Logs docker-compose services
+    cmds:
+      - task: docker-compose
+        vars:
+          CLI_ARGS: "logs -f {{.CLI_ARGS}}"
