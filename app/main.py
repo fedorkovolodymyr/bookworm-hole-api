@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 
-app = FastAPI()
+from app.core.lifespan import lifespan
+from app.routers.health import health_router
 
+app = FastAPI(lifespan=lifespan)
 
-@app.get("/")
-def read_root():
-    return {"Hello": "World"}
+app.include_router(health_router)

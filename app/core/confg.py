@@ -1,33 +1,34 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class APISerrings(BaseSettings):
-    API_V1_STR = "/api/v1"
-    API_PORT = 8000
+class APISettings(BaseSettings):
+    API_V1_STR: str = "/api/v1"
+    API_PORT: int = 8000
 
     model_config = SettingsConfigDict()
 
 
 class PostgresSettings(BaseSettings):
-    USER: str = "bookwormhole"
-    PASSWORD: str = "bookwormhole"
-    DB: str = "bookwormhole"
-    PORT: int = 5432
-    ECHO_SQL: bool = False
+    user: str = "bookwormhole"
+    password: str = "bookwormhole"
+    db: str = "bookwormhole"
+    port: int = 5432
+    host: str = "postgres"
+    echo_sql: bool = False
 
     @property
     def DB_URI(self) -> str:
         return (
-            f"postgresql+asyncpg://{self.USER}:"
-            f"{self.PASSWORD}@localhost:"
-            f"{self.PORT}/{self.DB}"
+            f"postgresql+asyncpg://{self.user}:"
+            f"{self.password}@{self.host}:"
+            f"{self.port}/{self.db}"
         )
 
     model_config = SettingsConfigDict(env_prefix="POSTGRES_")
 
 
 class Settings(BaseSettings):
-    api_settings: APISerrings = APISerrings()
+    api_settings: APISettings = APISettings()
     postgres_settings: PostgresSettings = PostgresSettings()
 
     model_config = SettingsConfigDict()
