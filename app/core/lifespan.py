@@ -1,11 +1,12 @@
 import asyncio
+
 from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
 from loguru import logger
 from sqlalchemy import inspect
 
-from app.models import Base  # required to register models' metadata
 from app.core.db import async_engine
+from app.models import Base  # required to register models' metadata
 
 
 async def init_db():
@@ -15,7 +16,6 @@ async def init_db():
 
 
 async def get_table_names():
-
     try:
         async with async_engine.connect() as conn:
 

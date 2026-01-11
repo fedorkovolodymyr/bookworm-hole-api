@@ -1,9 +1,11 @@
 from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import declarative_base, declarative_mixin
+from sqlalchemy.orm import DeclarativeBase, declarative_mixin
 from sqlalchemy.sql import func
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 @declarative_mixin

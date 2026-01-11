@@ -1,2 +1,2 @@
-from .books import Book
 from .base import Base, IdMixin
+from .books import Book
