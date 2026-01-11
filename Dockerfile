@@ -12,5 +12,3 @@ COPY ./uv.lock /code/uv.lock
 RUN uv sync --locked
 
 COPY ./app /code/app
-
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
