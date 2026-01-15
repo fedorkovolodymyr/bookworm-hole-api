@@ -2,33 +2,19 @@ version: "3"
 
 set: [errexit, pipefail, nounset]
 
-dotenv: [".env"]
-
 vars:
   UV: uv
   UNVICORN: "uvicorn app.main:app"
   DC: "docker compose"
 
 tasks:
-  default:
-    desc: Install dependencies
-    cmds:
-      - task: install
-
-  _check-uv:
-    internal: true
-    preconditions:
-      - sh: command -v {{.UV}}
-        msg: uv not found — https://github.com/astral-sh/uv
 
   uv:
     desc: Run any uv command (advanced/manual use)
-    deps: [_check-uv]
     cmd: "{{.UV}} {{.CLI_ARGS}}"
 
   install:
     desc: Install dependencies
-    deps: [_check-uv]
     cmds:
       - task: uv
         vars:
@@ -37,26 +23,24 @@ tasks:
   run:
     desc: Run arbitrary command via uv (default)
     aliases: [exec]
-    deps: [_check-uv]
     cmd: "{{.UV}} run {{.UNVICORN}} {{.CLI_ARGS}}"
 
   dev:
-    desc: Run FastAPI app with uvicorn and reload
-    deps: [_check-uv]
+    desc: Run FastAPI app locally with Docker PostgreSQL (uses .env.local)
+    dotenv: [".env.local"]
     cmds:
+      - echo "Starting API locally → postgresql://localhost:5432"
       - task: run
         vars: { CLI_ARGS: "--reload {{.CLI_ARGS}}" }
 
   format:
     desc: Format all (imports + code)
-    deps: [_check-uv]
     cmds:
       - "{{.UV}} run ruff check --select I --fix {{.CLI_ARGS}}"
       - "{{.UV}} run ruff format {{.CLI_ARGS}}"
 
   lint:
     desc: Lint all (ruff + types)
-    deps: [_check-uv]
     cmds:
       - "{{.UV}} run ruff check {{.CLI_ARGS}}"
       - "{{.UV}} run pyright {{.CLI_ARGS}}"
@@ -65,20 +49,21 @@ tasks:
     desc: Format and fix all issues
     cmds:
       - task: format
-      - task: "{{.UV}} run ruff check --fix {{.CLI_ARGS}}"
+      - task: lint
 
   docker-compose:
     desc: Docker-compose services
+    dotenv: [".env.docker"]
     cmd: "{{.DC}} {{.CLI_ARGS}}"
 
   docker-compose-up:
-    desc: Start docker-compose services
+    desc: Start all docker-compose services
     cmds:
       - task: docker-compose
         vars:
           CLI_ARGS: "up -d {{.CLI_ARGS}}"
 
-  docker-compose-stop:
+  docker-compose-down:
     desc: Stop docker-compose services
     cmds:
       - task: docker-compose
@@ -86,8 +71,23 @@ tasks:
           CLI_ARGS: "down {{.CLI_ARGS}}"
 
   docker-compose-logs:
-    desc: Logs docker-compose services
+    desc: View docker-compose logs
     cmds:
       - task: docker-compose
         vars:
           CLI_ARGS: "logs -f {{.CLI_ARGS}}"
+
+  docker-compose-postgres:
+    desc: Start only PostgreSQL service
+    cmds:
+      - task: docker-compose
+        vars:
+          CLI_ARGS: "up -d postgres {{.CLI_ARGS}}"
+
+
+  docker-compose-api:
+    desc: Start only API service
+    cmds:
+      - task: docker-compose
+        vars:
+          CLI_ARGS: "up -d api {{.CLI_ARGS}}"

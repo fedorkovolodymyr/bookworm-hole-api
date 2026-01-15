@@ -9,7 +9,7 @@
             "name": "bookworm-hole-pg",
             "database": "bookwormhole",
             "username": "bookwormhole",
-            "password": "bookwormhole"
+            "password": "secretpassword"
         }
     ]
 }

@@ -14,13 +14,15 @@ Common commands:
 - clean env/lock: `task clean`
 
 ### Docker
-- up: `task docker-compose-up` (add `--` for extra flags, e.g. `task docker-compose-up -- -d`)
+- postgres only: `task docker-compose-postgres` (for local API development)
+- all services: `task docker-compose-up`
 - down: `task docker-compose-down`
-- build: `task docker-compose-build`
 - logs: `task docker-compose-logs` (live, with -f)
 
-### .env file
-Create a `.env` file (or copy from `.env.example`) and set the required variables.
+### Environment Configuration
+- **Local development**: copy `.env.example` to `.env.local` and set `POSTGRES_HOST=localhost`
+- **Docker**: uses `.env.docker` automatically (set `POSTGRES_HOST=postgres`)
+- See [SETUP.md](SETUP.md) for detailed configuration guide
 
 ### Code quality
 - format: `task format-code` / `task format-imports` / `task format` (all)

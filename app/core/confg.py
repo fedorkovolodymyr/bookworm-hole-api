@@ -2,10 +2,15 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class APISettings(BaseSettings):
-    API_V1_STR: str = "/api/v1"
-    API_PORT: int = 8000
+    api_v1_str: str = "/api/v1"
+    api_port: int = 8000
 
-    model_config = SettingsConfigDict()
+    model_config = SettingsConfigDict(
+        case_sensitive=False,
+        extra="ignore",
+        env_file=".env.local",
+        env_file_encoding="utf-8",
+    )
 
 
 class PostgresSettings(BaseSettings):
@@ -24,14 +29,19 @@ class PostgresSettings(BaseSettings):
             f"{self.port}/{self.db}"
         )
 
-    model_config = SettingsConfigDict(env_prefix="POSTGRES_")
+    model_config = SettingsConfigDict(
+        env_prefix="POSTGRES_",
+        case_sensitive=False,
+        extra="ignore",
+        env_file=".env.local",
+        env_file_encoding="utf-8",
+    )
 
 
-class Settings(BaseSettings):
-    api_settings: APISettings = APISettings()
-    postgres_settings: PostgresSettings = PostgresSettings()
-
-    model_config = SettingsConfigDict()
+class Settings:
+    def __init__(self):
+        self.api_settings = APISettings()
+        self.postgres_settings = PostgresSettings()
 
 
 settings = Settings()
