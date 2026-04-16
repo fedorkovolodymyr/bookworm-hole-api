@@ -63,8 +63,15 @@ tasks:
         vars:
           CLI_ARGS: "up -d {{.CLI_ARGS}}"
 
-  docker-compose-down:
+  docker-compose-stop:
     desc: Stop docker-compose services
+    cmds:
+      - task: docker-compose
+        vars:
+          CLI_ARGS: "stop {{.CLI_ARGS}}"
+
+  docker-compose-down:
+    desc: Down docker-compose services
     cmds:
       - task: docker-compose
         vars:
@@ -91,3 +98,29 @@ tasks:
       - task: docker-compose
         vars:
           CLI_ARGS: "up -d api {{.CLI_ARGS}}"
+
+  alembic:
+    desc: Run alembic commands (e.g., task alembic -- history)
+    dotenv: [".env.local"]
+    cmd: "{{.UV}} run alembic {{.CLI_ARGS}}"
+
+  alembic-revision:
+    desc: Create new migration (e.g., task alembic-revision -- "add users table")
+    cmds:
+      - task: alembic
+        vars:
+          CLI_ARGS: "revision --autogenerate -m {{.CLI_ARGS}}"
+
+  alembic-upgrade:
+    desc: Apply migrations (e.g., task alembic-upgrade -- head or +1)
+    cmds:
+      - task: alembic
+        vars:
+          CLI_ARGS: "upgrade head"
+
+  alembic-downgrade:
+    desc: Rollback migrations (e.g., task alembic-downgrade -- -1)
+    cmds:
+      - task: alembic
+        vars:
+          CLI_ARGS: "downgrade -1"

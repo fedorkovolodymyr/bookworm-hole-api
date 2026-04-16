@@ -1,7 +1,5 @@
 from typing import AsyncIterator
 
-from loguru import logger
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.confg import settings
@@ -19,12 +17,8 @@ AsyncSessionLocal = async_sessionmaker(
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        except SQLAlchemyError as e:
-            logger.exception(f"Database error: {e}")
-            await session.rollback()
-            raise
-        finally:
-            await session.close()
+    async_session = async_sessionmaker(
+        async_engine, class_=AsyncSession, expire_on_commit=False
+    )
+    async with async_session() as session:
+        yield session
