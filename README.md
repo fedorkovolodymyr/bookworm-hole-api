@@ -13,6 +13,32 @@ Common commands:
 - arbitrary run: `task run CMD="python -m app" ARGS="--debug"` (alias `exec`)
 - clean env/lock: `task clean`
 
+### Getting Started
+
+1. **Setup PostgreSQL**:
+   ```bash
+   task docker-compose-postgres  # Start PostgreSQL in Docker
+   ```
+
+2. **Run database migrations**:
+   ```bash
+   task alembic-upgrade -- head   # Apply all migrations
+   ```
+
+3. **Start development server**:
+   ```bash
+   task dev                       # Start API locally
+   ```
+
+### Database Migrations (Alembic)
+- create migration: `task alembic-revision -- "add users table"`
+- apply migrations: `task alembic-upgrade` (all)
+- rollback: `task alembic-downgrade` (one back)
+- check status: `task alembic -- current`
+- view history: `task alembic -- history`
+
+**⚠️ Important**: Always run migrations after pulling changes or before starting the app!
+
 ### Docker
 - postgres only: `task docker-compose-postgres` (for local API development)
 - all services: `task docker-compose-up`

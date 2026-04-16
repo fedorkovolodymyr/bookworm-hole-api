@@ -1,9 +1,8 @@
-from sqlalchemy import Column, String
+from sqlmodel import Field, SQLModel
 
-from app.models.base import Base, IdMixin
+from app.models.mixins import IdMixin, TimestampMixin
 
 
-class Book(Base, IdMixin):
-    __tablename__ = "books"
-
-    name = Column(String)
+class Book(SQLModel, IdMixin, TimestampMixin, table=True):
+    title: str = Field(max_length=255, index=True)
+    description: str
