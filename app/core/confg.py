@@ -8,7 +8,7 @@ class APISettings(BaseSettings):
     model_config = SettingsConfigDict(
         case_sensitive=False,
         extra="ignore",
-        env_file=".env.local",
+        env_file=".env",
         env_file_encoding="utf-8",
     )
 
@@ -18,7 +18,7 @@ class PostgresSettings(BaseSettings):
     password: str = "bookwormhole"
     db: str = "bookwormhole"
     port: int = 5432
-    host: str = "postgres"
+    host: str = "localhost"
     echo_sql: bool = False
 
     @property
@@ -33,7 +33,7 @@ class PostgresSettings(BaseSettings):
         env_prefix="POSTGRES_",
         case_sensitive=False,
         extra="ignore",
-        env_file=".env.local",
+        env_file=".env",
         env_file_encoding="utf-8",
     )
 

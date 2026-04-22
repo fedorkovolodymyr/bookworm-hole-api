@@ -23,5 +23,12 @@ dev = [
     "ruff>=0.14.9",
 ]
 
+[tool.setuptools]
+packages = ["app"]
+
+[tool.pyright]
+# SQLModel types __tablename__ as declared_attr[Unknown] but string assignment is correct
+reportIncompatibleVariableOverride = "none"
+
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

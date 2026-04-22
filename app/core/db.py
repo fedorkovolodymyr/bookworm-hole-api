@@ -9,16 +9,17 @@ async_engine = create_async_engine(
     pool_pre_ping=True,
     echo=settings.postgres_settings.echo_sql,
 )
-AsyncSessionLocal = async_sessionmaker(
-    bind=async_engine,
-    autoflush=False,
-    future=True,
+
+_async_session_factory = async_sessionmaker(
+    async_engine, class_=AsyncSession, expire_on_commit=False, autoflush=False
 )
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
-    async_session = async_sessionmaker(
-        async_engine, class_=AsyncSession, expire_on_commit=False
-    )
-    async with async_session() as session:
-        yield session
+    async with _async_session_factory() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
