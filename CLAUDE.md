@@ -17,6 +17,7 @@ DB queries in repositories only. Business logic in services only.
 - `app/repositories/book_repository.py` — BookRepository (async CRUD pattern to follow)
 - `app/models/mixins.py` — IdMixin, TimestampMixin (use for all models)
 - `app/core/db.py` — get_session() DI dependency
+- `app/core/config.py` — Settings class (api_settings, postgres_settings); import as `from app.core.config import settings`
 
 ## Gotchas
 - pyright `include = ["app", "scripts"]` required — omitting causes .venv scan (8600 errors)
@@ -27,7 +28,8 @@ DB queries in repositories only. Business logic in services only.
 ## Testing
 - pytest-asyncio `asyncio_mode = "auto"`, testpaths = `tests/`
 - Route tests: `AsyncClient(transport=ASGITransport(app=app), base_url="http://test")`
-- No tests written yet (Epic 17 in BACKEND_ISSUES.md)
+- `tests/conftest.py` — shared `async_client` fixture (no DB override; for pure HTTP tests)
+- For tests needing DB: override `get_session` in the test file via `app.dependency_overrides[get_session] = async_generator_fn`
 
 ## Skills
 - `/gh-issue-agent <N>` — full issue-to-PR pipeline (fetch→investigate→plan→implement→lint→test→review→PR)

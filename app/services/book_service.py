@@ -22,7 +22,9 @@ class BookService:
             raise HTTPException(status_code=404, detail="Book not found")
         return book
 
-    async def retrieve_all_books(self, skip: int = 0, limit: int = 10) -> Sequence[Book]:
+    async def retrieve_all_books(
+        self, skip: int = 0, limit: int = 10
+    ) -> Sequence[Book]:
         return await self.repository.get_all(skip, limit)
 
     async def modify_book(self, book_id: UUID, updated_book: UpdateBookSchema) -> Book:
