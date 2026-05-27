@@ -1,0 +1,60 @@
+{
+  "name": "bookworm-hole-api",
+  "dockerComposeFile": "docker-compose.devcontainer.yaml",
+  "service": "api",
+  "workspaceFolder": "/workspace",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "tamasfe.even-better-toml",
+        "eamodio.gitlens",
+        "mtxr.sqltools",
+        "mtxr.sqltools-driver-pg",
+        "ms-azuretools.vscode-docker",
+        "task.vscode-task"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/workspace/.venv/bin/python",
+        "python.terminal.activateEnvironment": false,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff",
+          "editor.formatOnSave": true,
+          "editor.codeActionsOnSave": {
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+          }
+        },
+        "ruff.path": ["/workspace/.venv/bin/ruff"],
+        "pylance.importStrategy": "fromEnvironment",
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "sqltools.connections": [
+          {
+            "name": "bookworm-hole-pg (devcontainer)",
+            "driver": "PostgreSQL",
+            "server": "postgres",
+            "port": 5432,
+            "database": "bookwormhole",
+            "username": "bookwormhole",
+            "password": "secretpassword",
+            "previewLimit": 50
+          }
+        ]
+      }
+    }
+  },
+
+  "forwardPorts": [8000, 5432, 6379],
+  "portsAttributes": {
+    "8000": { "label": "FastAPI", "onAutoForward": "notify" },
+    "5432": { "label": "PostgreSQL", "onAutoForward": "silent" },
+    "6379": { "label": "Redis", "onAutoForward": "silent" }
+  },
+
+  "postCreateCommand": "uv sync --locked --all-groups && task alembic-upgrade",
+
+  "remoteUser": "root"
+}

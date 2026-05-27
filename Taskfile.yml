@@ -26,8 +26,8 @@ tasks:
     cmd: "{{.UV}} run {{.UNVICORN}} {{.CLI_ARGS}}"
 
   dev:
-    desc: Run FastAPI app locally with Docker PostgreSQL (uses .env.local)
-    dotenv: [".env.local"]
+    desc: Run FastAPI app locally with Docker PostgreSQL (uses .env)
+    dotenv: [".env"]
     cmds:
       - echo "Starting API locally → postgresql://localhost:5432"
       - task: run
@@ -63,7 +63,7 @@ tasks:
 
   docker-compose:
     desc: Docker-compose services
-    dotenv: [".env.docker"]
+    dotenv: [".env"]
     cmd: "{{.DC}} {{.CLI_ARGS}}"
 
   docker-compose-up:
@@ -111,7 +111,7 @@ tasks:
 
   alembic:
     desc: Run alembic commands (e.g., task alembic -- history)
-    dotenv: [".env.local"]
+    dotenv: [".env"]
     cmd: "{{.UV}} run alembic {{.CLI_ARGS}}"
 
   alembic-revision:

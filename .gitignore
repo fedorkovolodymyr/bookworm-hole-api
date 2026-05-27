@@ -265,3 +265,7 @@ docker-compose.local.yml
 .claude
 skills-lock.json
 /.claude/
+
+# devcontainer (explicitly tracked despite Docker patterns above)
+!.devcontainer/
+!.devcontainer/**

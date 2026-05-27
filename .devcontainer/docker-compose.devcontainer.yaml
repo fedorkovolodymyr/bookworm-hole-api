@@ -1,0 +1,58 @@
+name: bookworm-hole-api-dev
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile.dev
+    command: sleep infinity
+    volumes:
+      - ..:/workspace:cached
+      - /workspace/.venv  # anonymous volume so host .venv doesn't override container's
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_ECHO_SQL: "true"
+      REDIS_HOST: redis
+    env_file:
+      - ../.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    restart: unless-stopped
+    image: postgres:17-bookworm
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data:rw
+    environment:
+      POSTGRES_USER: bookwormhole
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: bookwormhole
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bookwormhole -d bookwormhole"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    restart: unless-stopped
+    image: redis:8-bookworm
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata_dev:/data:rw
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata_dev:
+  redisdata_dev:

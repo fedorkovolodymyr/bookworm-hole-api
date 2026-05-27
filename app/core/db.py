@@ -2,7 +2,7 @@ from typing import AsyncIterator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.core.confg import settings
+from app.core.config import settings
 
 async_engine = create_async_engine(
     settings.postgres_settings.DB_URI,

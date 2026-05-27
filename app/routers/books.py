@@ -24,7 +24,9 @@ async def retrieve_all_books(
     return await service.retrieve_all_books(skip, limit)
 
 
-@books_router.post("/", response_model=BookResponse, status_code=status.HTTP_201_CREATED)
+@books_router.post(
+    "/", response_model=BookResponse, status_code=status.HTTP_201_CREATED
+)
 async def create_book(
     new_book: CreateBookSchema,
     service: BookService = Depends(get_book_service),
