@@ -51,6 +51,16 @@ tasks:
       - task: format
       - task: lint
 
+  test:
+    desc: Run tests with pytest
+    cmds:
+      - "{{.UV}} run pytest {{.CLI_ARGS}}"
+
+  type-check:
+    desc: Run pyright type checker only
+    cmds:
+      - "{{.UV}} run pyright {{.CLI_ARGS}}"
+
   docker-compose:
     desc: Docker-compose services
     dotenv: [".env.docker"]

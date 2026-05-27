@@ -19,6 +19,9 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "httpx>=0.27.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
     "pyright>=1.1.407",
     "ruff>=0.14.9",
 ]
@@ -29,6 +32,13 @@ packages = ["app"]
 [tool.pyright]
 # SQLModel types __tablename__ as declared_attr[Unknown] but string assignment is correct
 reportIncompatibleVariableOverride = "none"
+reportAssignmentType = "none"
+include = ["app", "scripts"]
+exclude = [".venv", "alembic"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
