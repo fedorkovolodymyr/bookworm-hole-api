@@ -1,0 +1,23 @@
+FROM python:3.14-bookworm
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Install go-task
+RUN sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+
+# Install dev tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    bash-completion \
+    postgresql-client \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /workspace
+
+# Install deps first (cached layer)
+COPY pyproject.toml uv.lock ./
+RUN uv sync --locked --all-groups
+
+# Rest of code mounted as volume at runtime

@@ -6,8 +6,38 @@
 - `task type-check` — pyright only
 - `task test` — pytest (asyncio_mode=auto)
 - `task test -- --collect-only` — verify pytest config loads
-- `task dev` — FastAPI local (needs Docker postgres via `task docker-compose-postgres`)
+- `task dev` — FastAPI local with hot-reload (needs services running)
 - `task alembic-revision -- "message"` — create migration
+- `task alembic-upgrade` — apply migrations to head
+
+## Dev Environments
+
+### Option A — Dev Container (recommended)
+Open in VS Code → "Reopen in Container". Spins up api + postgres + redis automatically.
+- All services reachable by hostname: `postgres`, `redis`
+- `postCreateCommand` runs `uv sync` + `task alembic-upgrade`
+- Start API inside container: `task dev`
+- Ports forwarded: 8000 (API), 5432 (PG), 6379 (Redis)
+
+### Option B — Local + Docker services
+```bash
+cp .env.example .env          # once
+task docker-compose-up        # start postgres + redis (+ api)
+task alembic-upgrade          # apply migrations
+task dev                      # run FastAPI locally
+```
+Key tasks:
+- `task docker-compose-up` — start all services (detached)
+- `task docker-compose-stop` — stop without removing volumes
+- `task docker-compose-down` — stop + remove containers
+- `task docker-compose-postgres` — start only postgres
+- `task docker-compose-logs` — follow logs
+
+### Option C — Full Docker (production-like)
+```bash
+docker compose up -d          # api + postgres + redis
+```
+API served at `http://localhost:${API_PORT}`.
 
 ## Architecture
 Layers: `routers/` → `services/` → `repositories/` → `models/`, `schemas/`
@@ -24,6 +54,8 @@ DB queries in repositories only. Business logic in services only.
 - SQLModel needs `reportIncompatibleVariableOverride = "none"` + `reportAssignmentType = "none"`
 - `alembic/` excluded from pyright (uses sqlmodel internals not in stubs)
 - `.claude/` is gitignored — skills live locally only
+- Inside devcontainer: `.venv` is an anonymous volume; host `.venv` not mounted (prevents arch mismatch)
+- `POSTGRES_HOST` overridden to `postgres` in devcontainer/docker-compose (not `localhost`)
 
 ## Testing
 - pytest-asyncio `asyncio_mode = "auto"`, testpaths = `tests/`
