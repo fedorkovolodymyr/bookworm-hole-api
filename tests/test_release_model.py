@@ -1,7 +1,6 @@
 from sqlalchemy import inspect
 
-from app.models.books import Book
-from app.models.releases import Release
+from app.models.catalog import Book, Release
 
 
 def test_release_table_columns():

@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from app.models.books import Book
+from app.models.catalog import Book
 from app.repositories.book_repository import BookRepository
 from app.schemas.book_schemas import CreateBookSchema, UpdateBookSchema
 

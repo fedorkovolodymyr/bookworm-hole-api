@@ -1,15 +1,11 @@
 import enum
 import uuid
-from typing import TYPE_CHECKING
 
 from sqlalchemy import Column
 from sqlalchemy import Enum as SAEnum
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.mixins import IdMixin, TimestampMixin
-
-if TYPE_CHECKING:
-    from app.models.books import Book
 
 
 class ContributorRole(str, enum.Enum):
@@ -43,6 +39,28 @@ class ReleaseContributor(SQLModel, table=True):
     )
 
 
+class Book(SQLModel, IdMixin, TimestampMixin, table=True):
+    title: str = Field(max_length=255, index=True)
+    original_title: str | None = Field(default=None, max_length=255)
+    original_language: str | None = Field(default=None, max_length=35)
+    first_publication_year: int | None = Field(default=None)
+    description: str
+
+    releases: list["Release"] = Relationship(back_populates="book")
+    contributors: list["Contributor"] = Relationship(
+        back_populates="books", link_model=BookContributor
+    )
+
+
+class Release(SQLModel, IdMixin, TimestampMixin, table=True):
+    __tablename__ = "releases"
+
+    isbn: str = Field(max_length=20, unique=True, index=True)
+    book_id: uuid.UUID = Field(foreign_key="book.id", index=True)
+
+    book: Book = Relationship(back_populates="releases")
+
+
 class Contributor(SQLModel, IdMixin, TimestampMixin, table=True):
     __tablename__ = "contributors"
 
@@ -53,6 +71,6 @@ class Contributor(SQLModel, IdMixin, TimestampMixin, table=True):
     bio: str | None = Field(default=None)
     slug: str = Field(max_length=255, unique=True, index=True)
 
-    books: list["Book"] = Relationship(
+    books: list[Book] = Relationship(
         back_populates="contributors", link_model=BookContributor
     )

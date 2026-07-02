@@ -1,8 +1,6 @@
 from sqlalchemy import Table, inspect
 
-from app.models.books import Book
-from app.models.contributor import BookContributor
-from app.models.releases import Release
+from app.models.catalog import Book, BookContributor, Release
 
 
 def test_book_table_columns():
