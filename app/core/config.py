@@ -25,6 +25,8 @@ class PostgresSettings(BaseSettings):
     port: int = 5432
     host: str = "localhost"
     echo_sql: bool = False
+    pool_size: int = 5
+    max_overflow: int = 10
 
     @property
     def DB_URI(self) -> str:
