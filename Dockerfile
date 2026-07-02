@@ -1,14 +1,27 @@
-
-FROM python:3.14-bookworm
+# ── builder ────────────────────────────────────────────────────────────────────
+FROM python:3.14-slim AS builder
 
 WORKDIR /code
 
-# Install uv and uvx from Astral's UV image
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY ./pyproject.toml /code/pyproject.toml
-COPY ./uv.lock /code/uv.lock
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-install-project --no-dev
 
-RUN uv sync --locked
+COPY ./app ./app
+RUN uv sync --frozen --no-dev
 
-COPY ./app /code/app
+# ── runtime ────────────────────────────────────────────────────────────────────
+FROM python:3.14-slim AS runtime
+
+WORKDIR /code
+
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --from=builder /code/.venv /code/.venv
+COPY --from=builder /code/app /code/app
+COPY --from=builder /code/pyproject.toml /code/pyproject.toml
+COPY --from=builder /code/uv.lock /code/uv.lock
+
+EXPOSE 8000
+
+CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
