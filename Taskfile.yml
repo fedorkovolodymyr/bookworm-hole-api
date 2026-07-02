@@ -134,3 +134,58 @@ tasks:
       - task: alembic
         vars:
           CLI_ARGS: "downgrade -1"
+
+  up:
+    desc: Start the full stack via docker compose (api + postgres + redis)
+    dotenv: [".env"]
+    cmd: "{{.DC}} up -d --build {{.CLI_ARGS}}"
+
+  down:
+    desc: Stop and remove the docker compose stack
+    dotenv: [".env"]
+    cmd: "{{.DC}} down {{.CLI_ARGS}}"
+
+  shell:
+    desc: Exec an interactive shell into the running api container
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api bash"
+
+  test-container:
+    desc: Run pytest inside the running api container
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api uv run pytest {{.CLI_ARGS}}"
+
+  lint-container:
+    desc: Run ruff check inside the running api container
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api uv run ruff check {{.CLI_ARGS}}"
+
+  format-container:
+    desc: Run ruff format inside the running api container
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api uv run ruff format {{.CLI_ARGS}}"
+
+  migrate:
+    desc: Apply Alembic migrations to head, inside the running api container
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api uv run alembic upgrade head"
+
+  "migrate:new":
+    desc: 'Generate a new Alembic migration (e.g., task migrate:new -- "add users table")'
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api uv run alembic revision --autogenerate -m {{.CLI_ARGS}}"
+
+  seed:
+    desc: Load dev seed data into the running api container's database
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api uv run python -m scripts.seed"
+
+  "seed:test":
+    desc: Load test fixtures into the test database, via the running api container
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec -e POSTGRES_DB=bookwormhole_test api uv run python -m scripts.seed_test"
+
+  psql:
+    desc: Open an interactive psql shell against the dev Postgres container
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}"

@@ -9,6 +9,12 @@
 - `task dev` — FastAPI local with hot-reload (needs services running)
 - `task alembic-revision -- "message"` — create migration
 - `task alembic-upgrade` — apply migrations to head
+- `task up` / `task down` — start/stop full stack via docker compose
+- `task shell` — shell into the running api container
+- `task test-container` / `task lint-container` / `task format-container` — same, run inside the api container
+- `task migrate` / `task migrate:new -- "message"` — Alembic, inside the api container
+- `task seed` / `task seed:test` — load dev / test fixture data
+- `task psql` — psql shell against the dev database
 
 ## Dev Environments
 
@@ -38,6 +44,10 @@ Key tasks:
 docker compose up -d          # api + postgres + redis
 ```
 API served at `http://localhost:${API_PORT}`.
+
+## Task Maintenance
+- All developer operations go through `Taskfile.yml` — no raw `docker compose` or `uv` commands in docs/scripts.
+- Adding a new dev command/workflow requires updating `Taskfile.yml` (with a `desc:`), plus README.md and this file's Commands section, in the same change.
 
 ## Architecture
 Layers: `routers/` → `services/` → `repositories/` → `models/`, `schemas/`
@@ -71,7 +81,7 @@ DB queries in repositories only. Business logic in services only.
 - Use type hints everywhere: function args, return types, variables.
 
 ## Git
-- Commit messages: short, one line only. No body.
+- Commit messages: one line only, no body. Conventional Commits format: `<type>(<scope>): <description>`
 
 ## Skills
 - `/gh-issue-agent <N>` — full issue-to-PR pipeline (fetch→investigate→plan→implement→lint→test→review→PR)
