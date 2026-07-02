@@ -6,6 +6,7 @@ from app.models.contributor import (
     ReleaseContributor,
 )
 from app.models.mixins import IdMixin, TimestampMixin
+from app.models.refresh_token import RefreshToken
 from app.models.releases import Release
 from app.models.user import User
 
@@ -15,6 +16,7 @@ __all__ = [
     "Contributor",
     "ContributorRole",
     "IdMixin",
+    "RefreshToken",
     "Release",
     "ReleaseContributor",
     "TimestampMixin",

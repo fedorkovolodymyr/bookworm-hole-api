@@ -40,10 +40,26 @@ class PostgresSettings(BaseSettings):
     )
 
 
+class AuthSettings(BaseSettings):
+    secret_key: str = "dev-secret-key-change-in-production"
+    algorithm: str = "HS256"
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 30
+
+    model_config = SettingsConfigDict(
+        env_prefix="AUTH_",
+        case_sensitive=False,
+        extra="ignore",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+
 class Settings:
     def __init__(self):
         self.api_settings = APISettings()
         self.postgres_settings = PostgresSettings()
+        self.auth_settings = AuthSettings()
 
 
 settings = Settings()
