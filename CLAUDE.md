@@ -57,7 +57,7 @@ DB queries in repositories only. Business logic in services only.
 - `app/repositories/book_repository.py` — BookRepository (async CRUD pattern to follow)
 - `app/models/mixins.py` — IdMixin, TimestampMixin (use for all models)
 - `app/core/db.py` — get_session() DI dependency
-- `app/core/config.py` — Settings class (api_settings, postgres_settings); import as `from app.core.config import settings`
+- `app/core/config.py` — Settings class (api_settings, postgres_settings, auth_settings, app_settings); import as `from app.core.config import settings`, or inject via `Depends(get_settings)` (`@lru_cache`-backed)
 
 ## Gotchas
 - pyright `include = ["app", "scripts"]` required — omitting causes .venv scan (8600 errors)
