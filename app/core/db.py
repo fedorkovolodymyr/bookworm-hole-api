@@ -8,6 +8,8 @@ async_engine = create_async_engine(
     settings.postgres_settings.DB_URI,
     pool_pre_ping=True,
     echo=settings.postgres_settings.echo_sql,
+    pool_size=settings.postgres_settings.pool_size,
+    max_overflow=settings.postgres_settings.max_overflow,
 )
 
 _async_session_factory = async_sessionmaker(

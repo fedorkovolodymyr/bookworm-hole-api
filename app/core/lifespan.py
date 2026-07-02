@@ -5,6 +5,7 @@ from fastapi.concurrency import asynccontextmanager
 from loguru import logger
 
 from app.core.config import get_settings
+from app.core.db import async_engine
 
 
 @asynccontextmanager
@@ -13,4 +14,7 @@ async def lifespan(app: FastAPI):
     logger.info("Starting application...")
     yield
     logger.info("Shutting down application...")
-    logger.remove(sink_id)
+    try:
+        await async_engine.dispose()
+    finally:
+        logger.remove(sink_id)
