@@ -14,19 +14,17 @@ def test_book_table_columns():
         "original_language",
         "first_publication_year",
         "description",
-        "slug",
         "created_at",
         "updated_at",
     }
     assert expected.issubset(columns.keys())
-    assert columns["slug"].unique
     assert columns["original_title"].nullable
     assert columns["original_language"].nullable
     assert columns["first_publication_year"].nullable
 
 
 def test_book_defaults():
-    book = Book(title="1984", description="Dystopian novel", slug="1984")
+    book = Book(title="1984", description="Dystopian novel")
     assert book.original_title is None
     assert book.original_language is None
     assert book.first_publication_year is None

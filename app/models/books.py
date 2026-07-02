@@ -16,7 +16,6 @@ class Book(SQLModel, IdMixin, TimestampMixin, table=True):
     original_language: str | None = Field(default=None, max_length=35)
     first_publication_year: int | None = Field(default=None)
     description: str
-    slug: str = Field(max_length=255, unique=True, index=True)
 
     releases: list["Release"] = Relationship(back_populates="book")
     contributors: list["Contributor"] = Relationship(

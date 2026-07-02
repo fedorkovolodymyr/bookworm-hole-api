@@ -10,7 +10,6 @@ class CreateBookSchema(BaseModel):
     original_language: str | None = None
     first_publication_year: int | None = None
     description: str
-    slug: str
 
 
 class UpdateBookSchema(BaseModel):
@@ -19,7 +18,6 @@ class UpdateBookSchema(BaseModel):
     original_language: str | None = None
     first_publication_year: int | None = None
     description: str | None = None
-    slug: str | None = None
 
 
 class BookResponse(BaseModel):
@@ -31,6 +29,5 @@ class BookResponse(BaseModel):
     original_language: str | None
     first_publication_year: int | None
     description: str
-    slug: str
     created_at: datetime
     updated_at: datetime
