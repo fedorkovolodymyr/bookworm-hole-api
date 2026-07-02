@@ -5,19 +5,28 @@ import jwt
 import pytest
 
 from app.core.config import settings
-from app.core.security import (
-    create_access_token,
-    create_refresh_token,
-    decode_token,
-    hash_password,
-    verify_password,
-)
+from app.core.security import create_access_token, create_refresh_token, decode_token
+from app.services.security import hash_password, verify_password
 
 
-def test_hash_password_round_trip():
-    password_hash = hash_password("s3cret!")
-    assert verify_password("s3cret!", password_hash)
-    assert not verify_password("wrong", password_hash)
+def test_hash_password_produces_different_hashes_for_same_input():
+    assert hash_password("secret") != hash_password("secret")
+
+
+def test_verify_password_succeeds_for_correct_password():
+    assert verify_password("secret", hash_password("secret")) is True
+
+
+def test_verify_password_fails_for_wrong_password():
+    assert verify_password("wrong", hash_password("secret")) is False
+
+
+def test_verify_password_fails_for_malformed_hash():
+    assert verify_password("secret", "not-a-valid-hash") is False
+
+
+def test_hash_password_uses_argon2id():
+    assert hash_password("secret").startswith("$argon2id$")
 
 
 def test_create_access_token_has_expected_claims():

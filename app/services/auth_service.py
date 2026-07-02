@@ -3,18 +3,13 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
-from app.core.security import (
-    create_access_token,
-    create_refresh_token,
-    decode_token,
-    hash_password,
-    verify_password,
-)
+from app.core.security import create_access_token, create_refresh_token, decode_token
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.auth_schemas import LoginSchema, RegisterSchema, TokenResponse
+from app.services.security import hash_password, verify_password
 
 
 class AuthService:
