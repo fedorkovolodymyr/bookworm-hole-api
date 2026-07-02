@@ -1,10 +1,24 @@
-from babel import Locale, UnknownLocaleError
-from pydantic import field_validator
+from typing import Annotated
+
+from babel import Locale as BabelLocale
+from babel import UnknownLocaleError
+from pydantic import AfterValidator
 from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import CITEXT
 from sqlmodel import Field, SQLModel
 
 from app.models.mixins import IdMixin, TimestampMixin
+
+
+def _validate_bcp47_locale(value: str) -> str:
+    try:
+        BabelLocale.parse(value, sep="-")
+    except (UnknownLocaleError, ValueError) as exc:
+        raise ValueError(f"'{value}' is not a valid BCP-47 locale") from exc
+    return value
+
+
+Locale = Annotated[str, AfterValidator(_validate_bcp47_locale)]
 
 
 class User(SQLModel, IdMixin, TimestampMixin, table=True):
@@ -14,16 +28,7 @@ class User(SQLModel, IdMixin, TimestampMixin, table=True):
     display_name: str = Field(max_length=255)
     avatar_url: str | None = Field(default=None)
     bio: str | None = Field(default=None)
-    locale: str = Field(default="en", max_length=10)
+    locale: Locale = Field(default="en", max_length=10)
     timezone: str = Field(default="UTC", max_length=64)
     is_active: bool = Field(default=True)
     is_admin: bool = Field(default=False)
-
-    @field_validator("locale")
-    @classmethod
-    def validate_locale(cls, value: str) -> str:
-        try:
-            Locale.parse(value, sep="-")
-        except (UnknownLocaleError, ValueError) as exc:
-            raise ValueError(f"'{value}' is not a valid ISO locale") from exc
-        return value
