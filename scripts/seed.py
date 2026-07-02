@@ -3,8 +3,7 @@ import asyncio
 from loguru import logger
 
 from app.core.db import _async_session_factory
-from app.models.books import Book
-from app.models.contributor import Contributor
+from app.models.catalog import Book, Contributor
 from app.models.user import User
 from app.services.security import hash_password
 from scripts.seed_data import DEV_BOOKS, DEV_CONTRIBUTORS, DEV_USERS, upsert_by

@@ -56,8 +56,12 @@ DB queries in repositories only. Business logic in services only.
 ## Key Files
 - `app/repositories/book_repository.py` — BookRepository (async CRUD pattern to follow)
 - `app/models/mixins.py` — IdMixin, TimestampMixin (use for all models)
+- `app/models/catalog.py` — Book, Release, Contributor + join tables (bidirectional relationships, see Models rule below)
 - `app/core/db.py` — get_session() DI dependency
 - `app/core/config.py` — Settings class (api_settings, postgres_settings, auth_settings, app_settings); import as `from app.core.config import settings`, or inject via `Depends(get_settings)` (`@lru_cache`-backed)
+
+## Models
+- Models with bidirectional `Relationship()`/`back_populates` pairs go in one shared file (e.g. `app/models/catalog.py`), not split one-class-per-file. Splitting forces circular imports resolved via `if TYPE_CHECKING:` + string forward refs — avoid that pattern here. Models with no cross-relationships (e.g. `user.py`, `refresh_token.py`) still get their own file.
 
 ## Gotchas
 - pyright `include = ["app", "scripts"]` required — omitting causes .venv scan (8600 errors)

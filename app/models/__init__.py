@@ -1,13 +1,13 @@
-from app.models.books import Book
-from app.models.contributor import (
+from app.models.catalog import (
+    Book,
     BookContributor,
     Contributor,
     ContributorRole,
+    Release,
     ReleaseContributor,
 )
 from app.models.mixins import IdMixin, TimestampMixin
 from app.models.refresh_token import RefreshToken
-from app.models.releases import Release
 from app.models.user import User
 
 __all__ = [
