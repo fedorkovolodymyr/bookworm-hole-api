@@ -63,6 +63,16 @@ DB queries in repositories only. Business logic in services only.
 - `tests/conftest.py` — shared `async_client` fixture (no DB override; for pure HTTP tests)
 - For tests needing DB: override `get_session` in the test file via `app.dependency_overrides[get_session] = async_generator_fn`
 
+## Code Style
+- Keep code simple. Avoid over-engineering.
+- Comments: rare, only when non-obvious.
+- Files: small, well-structured. Split big files into smaller ones.
+- Avoid `# type: ignore`. Allowed only in rare cases.
+- Use type hints everywhere: function args, return types, variables.
+
+## Git
+- Commit messages: short, one line only. No body.
+
 ## Skills
 - `/gh-issue-agent <N>` — full issue-to-PR pipeline (fetch→investigate→plan→implement→lint→test→review→PR)
 - `/gh-add-issue` — add issue to BACKEND_ISSUES.md

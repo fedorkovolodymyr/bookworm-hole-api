@@ -1,10 +1,9 @@
-from sqlalchemy import Column, String
-from sqlmodel import SQLModel
+from sqlmodel import Field, SQLModel
 
 from app.models.mixins import IdMixin, TimestampMixin
 
 
-class Release(SQLModel, table=True, mixins=(IdMixin, TimestampMixin)):
+class Release(SQLModel, IdMixin, TimestampMixin, table=True):
     __tablename__ = "releases"
 
-    isbn = Column(String, unique=True, nullable=False)
+    isbn: str = Field(max_length=20, unique=True, index=True)
