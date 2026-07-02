@@ -7,6 +7,7 @@ from app.models.contributor import (
 )
 from app.models.mixins import IdMixin, TimestampMixin
 from app.models.releases import Release
+from app.models.user import User
 
 __all__ = [
     "Book",
@@ -17,4 +18,5 @@ __all__ = [
     "Release",
     "ReleaseContributor",
     "TimestampMixin",
+    "User",
 ]
