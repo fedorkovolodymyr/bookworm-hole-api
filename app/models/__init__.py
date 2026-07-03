@@ -9,6 +9,7 @@ from app.models.catalog import (
     ReleaseContributor,
     ReleaseFormat,
 )
+from app.models.collection import Collection, CollectionItem
 from app.models.mixins import IdMixin, TimestampMixin
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
@@ -17,6 +18,8 @@ __all__ = [
     "ISBN",
     "Book",
     "BookContributor",
+    "Collection",
+    "CollectionItem",
     "Contributor",
     "ContributorRole",
     "ISBNKind",
