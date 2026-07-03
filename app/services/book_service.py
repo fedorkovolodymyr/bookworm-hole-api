@@ -47,9 +47,7 @@ class BookService:
         return Page(items=list(items), total=total, limit=limit, offset=skip)
 
     async def modify_book(self, book_id: UUID, updated_book: UpdateBookSchema) -> Book:
-        book = await self.repository.update(
-            book_id, updated_book.model_dump(exclude_unset=True)
-        )
+        book = await self.repository.update(book_id, updated_book)
         if not book:
             raise HTTPException(status_code=404, detail="Book not found")
         return book

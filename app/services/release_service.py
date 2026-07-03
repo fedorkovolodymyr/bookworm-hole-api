@@ -33,9 +33,7 @@ class ReleaseService:
     async def modify_release(
         self, release_id: UUID, updated_release: UpdateReleaseSchema
     ) -> Release:
-        release = await self.repository.update(
-            release_id, updated_release.model_dump(exclude_unset=True)
-        )
+        release = await self.repository.update(release_id, updated_release)
         if not release:
             raise HTTPException(status_code=404, detail="Release not found")
         return release

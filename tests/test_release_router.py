@@ -126,6 +126,42 @@ async def test_modify_release_not_found(client: AsyncClient):
     assert response.status_code == 404
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("format", "paperback"),
+        ("publisher", "New Publisher"),
+        ("published_year", 1965),
+        ("language", "fr"),
+        ("page_count", 412),
+        ("duration_minutes", 620),
+        ("cover_image_url", "https://example.com/cover.jpg"),
+        ("description_override", "Alt description"),
+    ],
+)
+async def test_modify_release_updates_each_field(
+    client: AsyncClient, book_with_release, field: str, value: object
+):
+    _, release = book_with_release
+
+    response = await client.patch(f"/api/v1/releases/{release.id}", json={field: value})
+
+    assert response.status_code == 200
+    data = response.json()
+    original = {
+        "format": release.format.value,
+        "publisher": release.publisher,
+        "published_year": release.published_year,
+        "language": release.language,
+        "page_count": release.page_count,
+        "duration_minutes": release.duration_minutes,
+        "cover_image_url": release.cover_image_url,
+        "description_override": release.description_override,
+    }
+    for name, original_value in original.items():
+        assert data[name] == (value if name == field else original_value)
+
+
 async def test_create_release_requires_admin():
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
