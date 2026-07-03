@@ -1,3 +1,4 @@
+from app.models.book_status import BookStatus, BookStatusKind
 from app.models.catalog import (
     ISBN,
     Book,
@@ -18,6 +19,8 @@ __all__ = [
     "ISBN",
     "Book",
     "BookContributor",
+    "BookStatus",
+    "BookStatusKind",
     "Collection",
     "CollectionItem",
     "Contributor",
