@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import col, select
 
 from app.models.catalog import Release
+from app.schemas.book_schemas import UpdateReleaseSchema
 
 
 class ReleaseRepository:
@@ -25,12 +26,13 @@ class ReleaseRepository:
         )
         return result.scalars().first()
 
-    async def update(self, release_id: UUID, data: dict) -> Release | None:  # type: ignore[type-arg]
+    async def update(
+        self, release_id: UUID, data: UpdateReleaseSchema
+    ) -> Release | None:
         release = await self.session.get(Release, release_id)
         if not release:
             return None
-        for key, value in data.items():
-            setattr(release, key, value)
+        release.sqlmodel_update(data.model_dump(exclude_unset=True))
         self.session.add(release)
         await self.session.commit()
         return await self.get_by_id(release_id)

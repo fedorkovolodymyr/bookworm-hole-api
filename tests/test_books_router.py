@@ -211,3 +211,41 @@ async def test_modify_book_allowed_for_admin(client: AsyncClient, book_with_rele
         assert response.json()["title"] == "Renamed"
     finally:
         app.dependency_overrides.clear()
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("title", "New Title"),
+        ("original_title", "Original"),
+        ("original_language", "fr"),
+        ("first_publication_year", 1965),
+        ("description", "New description"),
+    ],
+)
+async def test_modify_book_updates_each_field(
+    client: AsyncClient, book_with_releases, field: str, value: object
+):
+    book, _, _ = book_with_releases
+    admin = User(
+        email="admin@example.com",
+        username="admin",
+        display_name="Admin",
+        is_admin=True,
+    )
+    app.dependency_overrides[get_current_user] = lambda: admin
+    try:
+        response = await client.patch(f"/api/v1/books/{book.id}", json={field: value})
+        assert response.status_code == 200
+        data = response.json()
+        original = {
+            "title": book.title,
+            "original_title": book.original_title,
+            "original_language": book.original_language,
+            "first_publication_year": book.first_publication_year,
+            "description": book.description,
+        }
+        for name, original_value in original.items():
+            assert data[name] == (value if name == field else original_value)
+    finally:
+        app.dependency_overrides.clear()

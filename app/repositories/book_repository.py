@@ -7,6 +7,7 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import col, select
 
 from app.models.catalog import ISBN, Book, BookContributor, Contributor, Release
+from app.schemas.book_schemas import UpdateBookSchema
 
 
 class BookRepository:
@@ -81,12 +82,11 @@ class BookRepository:
         result = await self.session.execute(base.distinct().offset(skip).limit(limit))
         return result.scalars().all(), total
 
-    async def update(self, book_id: UUID, data: dict) -> Book | None:  # type: ignore[type-arg]
+    async def update(self, book_id: UUID, data: UpdateBookSchema) -> Book | None:
         book = await self.session.get(Book, book_id)
         if not book:
             return None
-        for key, value in data.items():
-            setattr(book, key, value)
+        book.sqlmodel_update(data.model_dump(exclude_unset=True))
         self.session.add(book)
         await self.session.commit()
         await self.session.refresh(book)

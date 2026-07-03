@@ -76,6 +76,10 @@ DB queries in repositories only. Business logic in services only.
 - Route tests: `AsyncClient(transport=ASGITransport(app=app), base_url="http://test")`
 - `tests/conftest.py` — shared `async_client` fixture (no DB override; for pure HTTP tests)
 - For tests needing DB: override `get_session` in the test file via `app.dependency_overrides[get_session] = async_generator_fn`
+- Group tests in classes (e.g. `class TestCreateBook:`), one class per endpoint/unit under test.
+- Cover all cases: success paths + all error paths (validation, not-found, conflict, etc).
+- Assert all relevant response/model attributes, not just status code.
+- Partial-update (`PATCH`) endpoints: parametrized test per field of the Update schema, asserting both the changed field and that every other field stayed at its original value (catches the update method overwriting unset fields with `None`).
 
 ## Code Style
 - Keep code simple. Avoid over-engineering.
@@ -83,6 +87,7 @@ DB queries in repositories only. Business logic in services only.
 - Files: small, well-structured. Split big files into smaller ones.
 - Avoid `# type: ignore`. Allowed only in rare cases.
 - Use type hints everywhere: function args, return types, variables.
+- Partial-update repository methods (`update(id, data)`) take the Pydantic Update schema (e.g. `UpdateBookSchema`) directly, not `dict`/`dict[str, Any]`. Call `data.model_dump(exclude_unset=True)` then `model.sqlmodel_update(...)` inside the repository method — keeps partial-update semantics (unset fields untouched) while the signature still says what shape the data is. See `app/repositories/book_repository.py::update`.
 
 ## Git
 - Commit messages: one line only, no body. Conventional Commits format: `<type>(<scope>): <description>`
