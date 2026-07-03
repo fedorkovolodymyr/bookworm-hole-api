@@ -5,10 +5,12 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import col, delete
 
-from app.core.db import async_engine, get_session
+from app.core.db import get_session
+from app.core.deps import get_current_user
 from app.main import app
 from app.models.catalog import ISBN, ISBNKind, Release, ReleaseFormat
 from app.models.catalog import Book as BookModel
+from app.models.user import User
 
 
 @pytest.fixture
@@ -75,8 +77,6 @@ async def book_with_releases():
             await session.commit()
     except (SQLAlchemyError, OSError) as exc:
         pytest.skip(f"database unavailable: {exc}")
-    finally:
-        await async_engine.dispose()
 
 
 async def test_retrieve_book_by_isbn_dedup_and_shape(
@@ -108,3 +108,106 @@ async def test_retrieve_book_by_isbn_not_found(client: AsyncClient):
 async def test_retrieve_book_by_isbn_invalid_input(client: AsyncClient):
     response = await client.get("/api/v1/books/by-isbn/not-an-isbn")
     assert response.status_code == 404
+
+
+async def test_retrieve_book_by_id_includes_releases(
+    client: AsyncClient, book_with_releases
+):
+    book, _, _ = book_with_releases
+
+    response = await client.get(f"/api/v1/books/{book.id}")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == str(book.id)
+    assert len(data["releases"]) == 2
+
+
+async def test_retrieve_book_by_id_not_found(client: AsyncClient):
+    response = await client.get("/api/v1/books/00000000-0000-0000-0000-000000000000")
+    assert response.status_code == 404
+
+
+async def test_retrieve_all_books_filters_by_title(
+    client: AsyncClient, book_with_releases
+):
+    book, _, _ = book_with_releases
+
+    response = await client.get("/api/v1/books/", params={"title": "Dune"})
+
+    assert response.status_code == 200
+    data = response.json()
+    assert {"items", "total", "limit", "offset"} <= data.keys()
+    assert any(item["id"] == str(book.id) for item in data["items"])
+
+
+async def test_create_book_requires_admin(client: AsyncClient):
+    response = await client.post(
+        "/api/v1/books/",
+        json={"title": "New Book", "description": "desc"},
+    )
+    assert response.status_code == 401
+
+
+async def test_create_book_forbidden_for_non_admin(client: AsyncClient):
+    reader = User(email="reader@example.com", username="reader", display_name="Reader")
+    app.dependency_overrides[get_current_user] = lambda: reader
+    try:
+        response = await client.post(
+            "/api/v1/books/",
+            json={"title": "New Book", "description": "desc"},
+        )
+        assert response.status_code == 403
+    finally:
+        app.dependency_overrides.clear()
+
+
+async def test_create_book_allowed_for_admin(client: AsyncClient):
+    admin = User(
+        email="admin@example.com",
+        username="admin",
+        display_name="Admin",
+        is_admin=True,
+    )
+    app.dependency_overrides[get_current_user] = lambda: admin
+    response = None
+    try:
+        response = await client.post(
+            "/api/v1/books/",
+            json={"title": "New Book", "description": "desc"},
+        )
+        assert response.status_code == 201
+    finally:
+        app.dependency_overrides.clear()
+        if response is not None:
+            async for session in get_session():
+                await session.execute(
+                    delete(BookModel).where(col(BookModel.id) == response.json()["id"])
+                )
+                await session.commit()
+
+
+async def test_modify_book_requires_admin(client: AsyncClient, book_with_releases):
+    book, _, _ = book_with_releases
+
+    response = await client.patch(f"/api/v1/books/{book.id}", json={"title": "Renamed"})
+    assert response.status_code == 401
+
+
+async def test_modify_book_allowed_for_admin(client: AsyncClient, book_with_releases):
+    book, _, _ = book_with_releases
+    admin = User(
+        email="admin@example.com",
+        username="admin",
+        display_name="Admin",
+        is_admin=True,
+    )
+    app.dependency_overrides[get_current_user] = lambda: admin
+    try:
+        response = await client.patch(
+            f"/api/v1/books/{book.id}", json={"title": "Renamed"}
+        )
+        assert response.status_code == 200
+        assert response.json()["title"] == "Renamed"
+    finally:
+        app.dependency_overrides.clear()
