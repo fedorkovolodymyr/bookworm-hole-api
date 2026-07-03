@@ -1,4 +1,3 @@
-from typing import Sequence
 from uuid import UUID
 
 from fastapi import HTTPException
@@ -6,6 +5,7 @@ from fastapi import HTTPException
 from app.models.catalog import Book
 from app.repositories.book_repository import BookRepository
 from app.schemas.book_schemas import CreateBookSchema, UpdateBookSchema
+from app.schemas.common_schemas import Page
 from app.services.isbn import normalize_isbn
 
 
@@ -34,9 +34,17 @@ class BookService:
         return book
 
     async def retrieve_all_books(
-        self, skip: int = 0, limit: int = 10
-    ) -> Sequence[Book]:
-        return await self.repository.get_all(skip, limit)
+        self,
+        skip: int = 0,
+        limit: int = 10,
+        title: str | None = None,
+        author: str | None = None,
+        language: str | None = None,
+    ) -> Page[Book]:
+        items, total = await self.repository.get_all(
+            skip, limit, title, author, language
+        )
+        return Page(items=list(items), total=total, limit=limit, offset=skip)
 
     async def modify_book(self, book_id: UUID, updated_book: UpdateBookSchema) -> Book:
         book = await self.repository.update(

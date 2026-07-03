@@ -1,11 +1,12 @@
 from typing import Sequence
 from uuid import UUID
 
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlmodel import col, select
 
-from app.models.catalog import ISBN, Book, Release
+from app.models.catalog import ISBN, Book, BookContributor, Contributor, Release
 
 
 class BookRepository:
@@ -19,7 +20,12 @@ class BookRepository:
         return book
 
     async def get_by_id(self, book_id: UUID) -> Book | None:
-        return await self.session.get(Book, book_id)
+        result = await self.session.execute(
+            select(Book)
+            .where(col(Book.id) == book_id)
+            .options(selectinload(Book.releases).selectinload(Release.isbns))  # pyright: ignore[reportArgumentType]
+        )
+        return result.scalars().first()
 
     async def get_by_isbn(self, code_normalized: str) -> Book | None:
         result = await self.session.execute(
@@ -31,9 +37,49 @@ class BookRepository:
         )
         return result.scalars().first()
 
-    async def get_all(self, skip: int = 0, limit: int = 10) -> Sequence[Book]:
-        result = await self.session.execute(select(Book).offset(skip).limit(limit))
-        return result.scalars().all()
+    async def get_all(
+        self,
+        skip: int = 0,
+        limit: int = 10,
+        title: str | None = None,
+        author: str | None = None,
+        language: str | None = None,
+    ) -> tuple[Sequence[Book], int]:
+        filters = []
+        if title:
+            filters.append(col(Book.title).ilike(f"%{title}%"))
+        if language:
+            filters.append(col(Release.language) == language)
+
+        base = select(Book)
+        count_query = select(func.count(func.distinct(Book.id)))
+        if language:
+            base = base.join(Release, col(Release.book_id) == col(Book.id))
+            count_query = count_query.join(
+                Release, col(Release.book_id) == col(Book.id)
+            )
+        if author:
+            base = base.join(
+                BookContributor, col(BookContributor.book_id) == col(Book.id)
+            ).join(
+                Contributor,
+                col(Contributor.id) == col(BookContributor.contributor_id),
+            )
+            count_query = count_query.join(
+                BookContributor, col(BookContributor.book_id) == col(Book.id)
+            ).join(
+                Contributor,
+                col(Contributor.id) == col(BookContributor.contributor_id),
+            )
+            filters.append(col(Contributor.full_name).ilike(f"%{author}%"))
+
+        for condition in filters:
+            base = base.where(condition)
+            count_query = count_query.where(condition)
+
+        total = (await self.session.execute(count_query)).scalar_one()
+        result = await self.session.execute(base.distinct().offset(skip).limit(limit))
+        return result.scalars().all(), total
 
     async def update(self, book_id: UUID, data: dict) -> Book | None:  # type: ignore[type-arg]
         book = await self.session.get(Book, book_id)

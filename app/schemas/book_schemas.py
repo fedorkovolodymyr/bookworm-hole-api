@@ -71,3 +71,26 @@ class BookWithReleasesResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     releases: list[ReleaseWithISBNsResponse]
+
+
+class CreateReleaseSchema(BaseModel):
+    book_id: UUID
+    format: ReleaseFormat
+    publisher: str
+    published_year: int | None = None
+    language: str
+    page_count: int | None = None
+    duration_minutes: int | None = None
+    cover_image_url: str | None = None
+    description_override: str | None = None
+
+
+class UpdateReleaseSchema(BaseModel):
+    format: ReleaseFormat | None = None
+    publisher: str | None = None
+    published_year: int | None = None
+    language: str | None = None
+    page_count: int | None = None
+    duration_minutes: int | None = None
+    cover_image_url: str | None = None
+    description_override: str | None = None
