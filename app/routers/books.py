@@ -5,7 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
 from app.repositories.book_repository import BookRepository
-from app.schemas.book_schemas import BookResponse, CreateBookSchema, UpdateBookSchema
+from app.schemas.book_schemas import (
+    BookResponse,
+    BookWithReleasesResponse,
+    CreateBookSchema,
+    UpdateBookSchema,
+)
 from app.services.book_service import BookService
 
 books_router = APIRouter(prefix="/books", tags=["books"])
@@ -32,6 +37,14 @@ async def create_book(
     service: BookService = Depends(get_book_service),
 ):
     return await service.create_book(new_book)
+
+
+@books_router.get("/by-isbn/{isbn}", response_model=BookWithReleasesResponse)
+async def retrieve_book_by_isbn(
+    isbn: str,
+    service: BookService = Depends(get_book_service),
+):
+    return await service.retrieve_book_by_isbn(isbn)
 
 
 @books_router.get("/{book_id}", response_model=BookResponse)

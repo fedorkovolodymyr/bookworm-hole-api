@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from app.models.catalog import Book
 from app.repositories.book_repository import BookRepository
 from app.schemas.book_schemas import CreateBookSchema, UpdateBookSchema
+from app.services.isbn import normalize_isbn
 
 
 class BookService:
@@ -18,6 +19,16 @@ class BookService:
 
     async def retrieve_book_by_id(self, book_id: UUID) -> Book:
         book = await self.repository.get_by_id(book_id)
+        if not book:
+            raise HTTPException(status_code=404, detail="Book not found")
+        return book
+
+    async def retrieve_book_by_isbn(self, raw_isbn: str) -> Book:
+        try:
+            code_normalized = normalize_isbn(raw_isbn)
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail="Book not found") from exc
+        book = await self.repository.get_by_isbn(code_normalized)
         if not book:
             raise HTTPException(status_code=404, detail="Book not found")
         return book
