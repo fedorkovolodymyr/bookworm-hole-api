@@ -22,6 +22,27 @@ async def client():
 
 
 @pytest.fixture
+async def admin_client(client: AsyncClient):
+    admin = User(
+        email="admin@example.com",
+        username="admin",
+        display_name="Admin",
+        is_admin=True,
+    )
+    app.dependency_overrides[get_current_user] = lambda: admin
+    yield client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+async def reader_client(client: AsyncClient):
+    reader = User(email="reader@example.com", username="reader", display_name="Reader")
+    app.dependency_overrides[get_current_user] = lambda: reader
+    yield client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
 async def book_with_releases():
     try:
         async for session in get_session():
@@ -149,42 +170,26 @@ async def test_create_book_requires_admin(client: AsyncClient):
     assert response.status_code == 401
 
 
-async def test_create_book_forbidden_for_non_admin(client: AsyncClient):
-    reader = User(email="reader@example.com", username="reader", display_name="Reader")
-    app.dependency_overrides[get_current_user] = lambda: reader
-    try:
-        response = await client.post(
-            "/api/v1/books/",
-            json={"title": "New Book", "description": "desc"},
-        )
-        assert response.status_code == 403
-    finally:
-        app.dependency_overrides.clear()
-
-
-async def test_create_book_allowed_for_admin(client: AsyncClient):
-    admin = User(
-        email="admin@example.com",
-        username="admin",
-        display_name="Admin",
-        is_admin=True,
+async def test_create_book_forbidden_for_non_admin(reader_client: AsyncClient):
+    response = await reader_client.post(
+        "/api/v1/books/",
+        json={"title": "New Book", "description": "desc"},
     )
-    app.dependency_overrides[get_current_user] = lambda: admin
-    response = None
-    try:
-        response = await client.post(
-            "/api/v1/books/",
-            json={"title": "New Book", "description": "desc"},
+    assert response.status_code == 403
+
+
+async def test_create_book_allowed_for_admin(admin_client: AsyncClient):
+    response = await admin_client.post(
+        "/api/v1/books/",
+        json={"title": "New Book", "description": "desc"},
+    )
+    assert response.status_code == 201
+
+    async for session in get_session():
+        await session.execute(
+            delete(BookModel).where(col(BookModel.id) == response.json()["id"])
         )
-        assert response.status_code == 201
-    finally:
-        app.dependency_overrides.clear()
-        if response is not None:
-            async for session in get_session():
-                await session.execute(
-                    delete(BookModel).where(col(BookModel.id) == response.json()["id"])
-                )
-                await session.commit()
+        await session.commit()
 
 
 async def test_modify_book_requires_admin(client: AsyncClient, book_with_releases):
@@ -194,23 +199,16 @@ async def test_modify_book_requires_admin(client: AsyncClient, book_with_release
     assert response.status_code == 401
 
 
-async def test_modify_book_allowed_for_admin(client: AsyncClient, book_with_releases):
+async def test_modify_book_allowed_for_admin(
+    admin_client: AsyncClient, book_with_releases
+):
     book, _, _ = book_with_releases
-    admin = User(
-        email="admin@example.com",
-        username="admin",
-        display_name="Admin",
-        is_admin=True,
+
+    response = await admin_client.patch(
+        f"/api/v1/books/{book.id}", json={"title": "Renamed"}
     )
-    app.dependency_overrides[get_current_user] = lambda: admin
-    try:
-        response = await client.patch(
-            f"/api/v1/books/{book.id}", json={"title": "Renamed"}
-        )
-        assert response.status_code == 200
-        assert response.json()["title"] == "Renamed"
-    finally:
-        app.dependency_overrides.clear()
+    assert response.status_code == 200
+    assert response.json()["title"] == "Renamed"
 
 
 @pytest.mark.parametrize(
@@ -224,28 +222,19 @@ async def test_modify_book_allowed_for_admin(client: AsyncClient, book_with_rele
     ],
 )
 async def test_modify_book_updates_each_field(
-    client: AsyncClient, book_with_releases, field: str, value: object
+    admin_client: AsyncClient, book_with_releases, field: str, value: object
 ):
     book, _, _ = book_with_releases
-    admin = User(
-        email="admin@example.com",
-        username="admin",
-        display_name="Admin",
-        is_admin=True,
-    )
-    app.dependency_overrides[get_current_user] = lambda: admin
-    try:
-        response = await client.patch(f"/api/v1/books/{book.id}", json={field: value})
-        assert response.status_code == 200
-        data = response.json()
-        original = {
-            "title": book.title,
-            "original_title": book.original_title,
-            "original_language": book.original_language,
-            "first_publication_year": book.first_publication_year,
-            "description": book.description,
-        }
-        for name, original_value in original.items():
-            assert data[name] == (value if name == field else original_value)
-    finally:
-        app.dependency_overrides.clear()
+
+    response = await admin_client.patch(f"/api/v1/books/{book.id}", json={field: value})
+    assert response.status_code == 200
+    data = response.json()
+    original = {
+        "title": book.title,
+        "original_title": book.original_title,
+        "original_language": book.original_language,
+        "first_publication_year": book.first_publication_year,
+        "description": book.description,
+    }
+    for name, original_value in original.items():
+        assert data[name] == (value if name == field else original_value)
