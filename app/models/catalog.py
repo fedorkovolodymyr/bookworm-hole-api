@@ -62,8 +62,8 @@ class Book(SQLModel, IdMixin, TimestampMixin, table=True):
     first_publication_year: int | None = Field(default=None)
     description: str
 
-    releases: list["Release"] = Relationship(back_populates="book")
-    contributors: list["Contributor"] = Relationship(
+    releases: list[Release] = Relationship(back_populates="book")
+    contributors: list[Contributor] = Relationship(
         back_populates="books", link_model=BookContributor
     )
 
@@ -87,8 +87,8 @@ class Release(SQLModel, IdMixin, TimestampMixin, table=True):
     description_override: str | None = Field(default=None)
 
     book: Book = Relationship(back_populates="releases")
-    isbns: list["ISBN"] = Relationship(back_populates="release")
-    contributors: list["Contributor"] = Relationship(
+    isbns: list[ISBN] = Relationship(back_populates="release")
+    contributors: list[Contributor] = Relationship(
         back_populates="releases", link_model=ReleaseContributor
     )
 

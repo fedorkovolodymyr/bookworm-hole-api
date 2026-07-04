@@ -1,7 +1,7 @@
-from typing import Sequence
+from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import func
+from sqlalchemy import ColumnElement, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
@@ -50,7 +50,7 @@ class BookRepository:
         author: str | None = None,
         language: str | None = None,
     ) -> tuple[Sequence[Book], int]:
-        filters = []
+        filters: list[ColumnElement[bool]] = []
         if title:
             filters.append(col(Book.title).ilike(f"%{title}%"))
         if language:

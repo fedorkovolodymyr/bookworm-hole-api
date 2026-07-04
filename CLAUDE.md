@@ -1,11 +1,14 @@
 # bookworm-hole-api
 
 ## Commands
+
 - `task format` — ruff import sort + format
 - `task lint` — ruff check + pyright (both must pass)
 - `task type-check` — pyright only
 - `task test` — pytest (asyncio_mode=auto)
 - `task test -- --collect-only` — verify pytest config loads
+- `task precommit-install` — install git pre-commit hooks (required first-time setup)
+- `task precommit` — run all pre-commit hooks against every file (same set CI runs)
 - `task dev` — FastAPI local with hot-reload (needs services running)
 - `task alembic-revision -- "message"` — create migration
 - `task alembic-upgrade` — apply migrations to head
@@ -19,20 +22,27 @@
 ## Dev Environments
 
 ### Option A — Dev Container (recommended)
+
 Open in VS Code → "Reopen in Container". Spins up api + postgres + redis automatically.
+
 - All services reachable by hostname: `postgres`, `redis`
 - `postCreateCommand` runs `uv sync` + `task alembic-upgrade`
 - Start API inside container: `task dev`
 - Ports forwarded: 8000 (API), 5432 (PG), 6379 (Redis)
+- Run `task precommit-install` once after first sync (required — commits are expected to run local hooks)
 
 ### Option B — Local + Docker services
+
 ```bash
 cp .env.example .env          # once
 task docker-compose-up        # start postgres + redis (+ api)
 task alembic-upgrade          # apply migrations
+task precommit-install        # once, required — installs git pre-commit hooks
 task dev                      # run FastAPI locally
 ```
+
 Key tasks:
+
 - `task docker-compose-up` — start all services (detached)
 - `task docker-compose-stop` — stop without removing volumes
 - `task docker-compose-down` — stop + remove containers
@@ -40,20 +50,25 @@ Key tasks:
 - `task docker-compose-logs` — follow logs
 
 ### Option C — Full Docker (production-like)
+
 ```bash
 docker compose up -d          # api + postgres + redis
 ```
-API served at `http://localhost:${API_PORT}`.
+
+API served at `http://localhost:${API_PORT}`. Run `task precommit-install` from a local uv checkout before committing — hooks run on the host, not inside this container.
 
 ## Task Maintenance
+
 - All developer operations go through `Taskfile.yml` — no raw `docker compose` or `uv` commands in docs/scripts.
 - Adding a new dev command/workflow requires updating `Taskfile.yml` (with a `desc:`), plus README.md and this file's Commands section, in the same change.
 
 ## Architecture
+
 Layers: `routers/` → `services/` → `repositories/` → `models/`, `schemas/`
 DB queries in repositories only. Business logic in services only.
 
 ## Key Files
+
 - `app/repositories/book_repository.py` — BookRepository (async CRUD pattern to follow)
 - `app/models/mixins.py` — IdMixin, TimestampMixin (use for all models)
 - `app/models/catalog.py` — Book, Release, Contributor + join tables (bidirectional relationships, see Models rule below)
@@ -61,9 +76,11 @@ DB queries in repositories only. Business logic in services only.
 - `app/core/config.py` — Settings class (api_settings, postgres_settings, auth_settings, app_settings, sentry_settings); import as `from app.core.config import settings`, or inject via `Depends(get_settings)` (`@lru_cache`-backed)
 
 ## Models
+
 - Models with bidirectional `Relationship()`/`back_populates` pairs go in one shared file (e.g. `app/models/catalog.py`), not split one-class-per-file. Splitting forces circular imports resolved via `if TYPE_CHECKING:` + string forward refs — avoid that pattern here. Models with no cross-relationships (e.g. `user.py`, `refresh_token.py`) still get their own file.
 
 ## Error Handling
+
 - Domain errors live in `app/core/errors.py`: `AppError` (base, `status_code = 500`) and subclasses `NotFoundError` (404), `ConflictError` (409), `UnauthorizedError` (401), `ExternalServiceError` (502). Each takes a `detail: str` message.
 - Services raise these directly (`raise NotFoundError("...")`) instead of `raise HTTPException(...)` or wrapping calls in `try/except Exception`. A single handler in `app/main.py` (`@app.exception_handler(AppError)`) translates any `AppError` to a JSON response — no per-service try/except needed to get an HTTP response.
 - Recurring error message strings go in `ErrorMessages` (`app/core/errors.py`), not inline literals, so they aren't duplicated across call sites.
@@ -72,19 +89,27 @@ DB queries in repositories only. Business logic in services only.
 - At the adapter boundary (`app/services/external/`), catch the external library's specific exception (e.g. `httpx.HTTPError`) and re-raise as `ExternalServiceError` — callers in `services/` then don't need their own try/except around adapter calls.
 
 ## Error Tracking (Sentry)
+
 - `SentrySettings` (`app/core/config.py`, `env_prefix="SENTRY_"`): `dsn`, `traces_sample_rate`, `profiles_sample_rate`. `dsn` unset (default) → Sentry stays disabled, no-op, no external calls — safe default for local dev/test.
 - `sentry_sdk.init(...)` is called from `app/core/lifespan.py` startup, guarded by `if sentry_settings.dsn`. `send_default_pii` is always `False` — never send emails/tokens/PII to Sentry.
 - To enable locally: set `SENTRY_DSN` in `.env` (see `.env.example`).
 
 ## Gotchas
+
 - pyright `include = ["app", "scripts"]` required — omitting causes .venv scan (8600 errors)
+- pyright runs `typeCheckingMode = "strict"` — new code must pass strict with no `# type: ignore`
 - SQLModel needs `reportIncompatibleVariableOverride = "none"` + `reportAssignmentType = "none"`
+- `pyjwt` is installed as `pyjwt[crypto]` — without the `cryptography` extra, pyright can't resolve `AllowedPrivateKeys`/`AllowedPublicKeys` and flags `jwt.encode`/`jwt.decode` as partially unknown even though the app only uses HS256
 - `alembic/` excluded from pyright (uses sqlmodel internals not in stubs)
 - `.claude/` is gitignored — skills live locally only
 - Inside devcontainer: `.venv` is an anonymous volume; host `.venv` not mounted (prevents arch mismatch)
 - `POSTGRES_HOST` overridden to `postgres` in devcontainer/docker-compose (not `localhost`)
+- `.pre-commit-config.yaml` hooks call `task format`/`task lint` (not raw `ruff`/`pyright`) per Task Maintenance rule; format-only hooks (json/yaml/toml/md/whitespace) use the standard `pre-commit-hooks`/`mdformat` repos directly
+- `.github/workflows/ci.yml` re-runs `task lint`, `task test`, `task precommit` so a locally skipped hook (`--no-verify`) is still caught
+- `.deepsource.toml` Python analyzer config mirrors the ruff/pyright rule set above — keep them in sync when either changes
 
 ## Testing
+
 - pytest-asyncio `asyncio_mode = "auto"`, testpaths = `tests/`
 - Route tests: `AsyncClient(transport=ASGITransport(app=app), base_url="http://test")`
 - `tests/conftest.py` — shared `async_client` fixture (no DB override; for pure HTTP tests)
@@ -95,6 +120,7 @@ DB queries in repositories only. Business logic in services only.
 - Partial-update (`PATCH`) endpoints: parametrized test per field of the Update schema, asserting both the changed field and that every other field stayed at its original value (catches the update method overwriting unset fields with `None`).
 
 ## Code Style
+
 - Keep code simple. Avoid over-engineering.
 - Comments: rare, only when non-obvious.
 - Files: small, well-structured. Split big files into smaller ones.
@@ -104,8 +130,10 @@ DB queries in repositories only. Business logic in services only.
 - Partial-update repository methods (`update(id, data)`) take the Pydantic Update schema (e.g. `UpdateBookSchema`) directly, not `dict`/`dict[str, Any]`. Call `data.model_dump(exclude_unset=True)` then `model.sqlmodel_update(...)` inside the repository method — keeps partial-update semantics (unset fields untouched) while the signature still says what shape the data is. See `app/repositories/book_repository.py::update`.
 
 ## Git
+
 - Commit messages: one line only, no body. Conventional Commits format: `<type>(<scope>): <description>`
 
 ## Skills
+
 - `/gh-issue-agent <N>` — full issue-to-PR pipeline (fetch→investigate→plan→implement→lint→test→review→PR)
 - `/gh-add-issue` — add issue to BACKEND_ISSUES.md

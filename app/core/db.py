@@ -1,4 +1,4 @@
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -12,13 +12,13 @@ async_engine = create_async_engine(
     max_overflow=settings.postgres_settings.max_overflow,
 )
 
-_async_session_factory = async_sessionmaker(
+async_session_factory = async_sessionmaker(
     async_engine, class_=AsyncSession, expire_on_commit=False, autoflush=False
 )
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:
-    async with _async_session_factory() as session:
+    async with async_session_factory() as session:
         try:
             yield session
             await session.commit()

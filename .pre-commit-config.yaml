@@ -1,0 +1,32 @@
+repos:
+  - repo: local
+    hooks:
+      - id: task-format
+        name: task format (ruff import sort + format)
+        entry: task format
+        language: system
+        pass_filenames: false
+        types: [python]
+      - id: task-lint
+        name: task lint (ruff check + pyright)
+        entry: task lint
+        language: system
+        pass_filenames: false
+        types: [python]
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-json
+      - id: pretty-format-json
+        args: [--autofix, --no-sort-keys]
+      - id: check-yaml
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+
+  - repo: https://github.com/executablebooks/mdformat
+    rev: 1.0.0
+    hooks:
+      - id: mdformat

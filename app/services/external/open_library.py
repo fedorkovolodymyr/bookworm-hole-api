@@ -1,5 +1,5 @@
 import re
-from typing import Any
+from typing import Any, cast
 
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,7 +43,8 @@ def _parse_published_year(publish_date: str | None) -> int | None:
 def _parse_language(languages: list[dict[str, Any]] | None) -> str | None:
     if not languages:
         return None
-    return languages[0].get("key", "").rsplit("/", 1)[-1] or None
+    key: Any = languages[0].get("key", "")
+    return key.rsplit("/", 1)[-1] or None
 
 
 def _parse_cover_url(covers: list[int] | None) -> str | None:
@@ -53,9 +54,9 @@ def _parse_cover_url(covers: list[int] | None) -> str | None:
 
 
 def _parse_description(work_doc: dict[str, Any]) -> str | None:
-    raw = work_doc.get("description")
+    raw: Any = work_doc.get("description")
     if isinstance(raw, dict):
-        return raw.get("value")
+        return cast(dict[str, Any], raw).get("value")
     if isinstance(raw, str):
         return raw
     return None
@@ -124,7 +125,7 @@ class OpenLibraryAdapter(BookSourceAdapter):
         async with self._build_client() as client:
             try:
                 response = await client.get(f"/isbn/{isbn}.json")
-                if response.status_code == httpx.codes.NOT_FOUND:
+                if response.status_code == int(httpx.codes.NOT_FOUND):
                     return None
                 response.raise_for_status()
             except httpx.HTTPError as exc:
@@ -139,7 +140,7 @@ class OpenLibraryAdapter(BookSourceAdapter):
                 work_key = works[0]["key"]
                 try:
                     work_response = await client.get(f"{work_key}.json")
-                    if work_response.status_code != httpx.codes.NOT_FOUND:
+                    if work_response.status_code != int(httpx.codes.NOT_FOUND):
                         work_response.raise_for_status()
                         work_doc = work_response.json()
                 except httpx.HTTPError:

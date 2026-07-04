@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      POSTGRES_PORT: 5432
+
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.14"
+
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+
+      - name: Install dependencies
+        run: task install
+
+      - name: Lint (ruff + pyright)
+        run: task lint
+
+      - name: Configure environment
+        run: |
+          printf 'POSTGRES_HOST=%s\n' "$POSTGRES_HOST" >> .env
+          printf 'POSTGRES_USER=%s\n' "$POSTGRES_USER" >> .env
+          printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD" >> .env
+          printf 'POSTGRES_DB=%s\n' "$POSTGRES_DB" >> .env
+          printf 'POSTGRES_PORT=%s\n' "$POSTGRES_PORT" >> .env
+
+      - name: Apply migrations
+        run: task alembic-upgrade
+
+      - name: Test
+        run: task test
+
+      - name: Pre-commit (full hook set, catches skipped local --no-verify)
+        run: task precommit

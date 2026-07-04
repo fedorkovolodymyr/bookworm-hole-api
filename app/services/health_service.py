@@ -36,7 +36,7 @@ class HealthService:
             logger.error(f"Database health check failed: {e}")
             return ServiceHealth(
                 status=HealthCheckStatus.UNHEALTHY,
-                message=f"Database connection failed: {str(e)}",
+                message=f"Database connection failed: {e!s}",
             )
 
     async def check_overall(self, session: AsyncSession) -> HealthCheckResponse:
