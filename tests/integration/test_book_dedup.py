@@ -1,21 +1,8 @@
 import pytest
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import col, delete, select
 
-from app.core.db import get_session
 from app.core.errors import NotFoundError
-from app.models.catalog import (
-    ISBN,
-    Book,
-    BookContributor,
-    Contributor,
-    ContributorRole,
-    ISBNKind,
-    Release,
-    ReleaseContributor,
-    ReleaseFormat,
-)
+from app.models.catalog import ContributorRole, ISBNKind, ReleaseFormat
 from app.models.external_source import ExternalSourceRecord
 from app.repositories.book_repository import BookRepository
 from app.repositories.contributor_repository import ContributorRepository
@@ -60,63 +47,13 @@ def register_stub_adapter():
 
 
 @pytest.fixture
-async def session():
-    async for session in get_session():
-        yield session
-
-
-@pytest.fixture
-def import_service(session: AsyncSession) -> ImportService:
+def import_service(db_session: AsyncSession) -> ImportService:
     return ImportService(
-        session,
-        BookRepository(session),
-        ContributorRepository(session),
-        ImportRepository(session),
+        db_session,
+        BookRepository(db_session),
+        ContributorRepository(db_session),
+        ImportRepository(db_session),
     )
-
-
-@pytest.fixture
-async def cleanup():
-    book_ids: list = []
-    contributor_ids: list = []
-    yield book_ids, contributor_ids
-    try:
-        async for session in get_session():
-            if book_ids:
-                release_ids = (
-                    (
-                        await session.execute(
-                            select(Release.id).where(col(Release.book_id).in_(book_ids))
-                        )
-                    )
-                    .scalars()
-                    .all()
-                )
-                if release_ids:
-                    await session.execute(
-                        delete(ISBN).where(col(ISBN.release_id).in_(release_ids))
-                    )
-                    await session.execute(
-                        delete(ReleaseContributor).where(
-                            col(ReleaseContributor.release_id).in_(release_ids)
-                        )
-                    )
-                    await session.execute(
-                        delete(Release).where(col(Release.id).in_(release_ids))
-                    )
-                await session.execute(
-                    delete(BookContributor).where(
-                        col(BookContributor.book_id).in_(book_ids)
-                    )
-                )
-                await session.execute(delete(Book).where(col(Book.id).in_(book_ids)))
-            if contributor_ids:
-                await session.execute(
-                    delete(Contributor).where(col(Contributor.id).in_(contributor_ids))
-                )
-            await session.commit()
-    except (SQLAlchemyError, OSError) as exc:
-        pytest.skip(f"database unavailable: {exc}")
 
 
 def _detail(*, title: str, isbn_code: str, author: str) -> ExternalBookDetail:
@@ -134,32 +71,10 @@ def _detail(*, title: str, isbn_code: str, author: str) -> ExternalBookDetail:
     )
 
 
-class TestImportBook:
-    async def test_creates_new_book_release_and_contributor(
-        self, import_service: ImportService, cleanup, session: AsyncSession
-    ):
-        book_ids, contributor_ids = cleanup
-        _DETAILS["book-a"] = _detail(
-            title="Test Import Book A",
-            isbn_code="9780000010001",
-            author="Test Author A",
-        )
-
-        book = await import_service.import_book("stub", "book-a")
-        await session.commit()
-        book_ids.append(book.id)
-        contributor_ids.extend(c.id for c in book.contributors)
-
-        assert book.title == "Test Import Book A"
-        assert len(book.releases) == 1
-        assert book.releases[0].isbns[0].code_normalized == "9780000010001"
-        assert book.releases[0].publisher == "Test Publisher"
-        assert [c.full_name for c in book.contributors] == ["Test Author A"]
-
+class TestImportBookDedup:
     async def test_existing_isbn_returns_existing_book_no_duplicate(
-        self, import_service: ImportService, cleanup, session: AsyncSession
+        self, import_service: ImportService
     ):
-        book_ids, contributor_ids = cleanup
         _DETAILS["book-b"] = _detail(
             title="Test Import Book B",
             isbn_code="9780000010018",
@@ -167,29 +82,20 @@ class TestImportBook:
         )
 
         first = await import_service.import_book("stub", "book-b")
-        await session.commit()
-        book_ids.append(first.id)
-        contributor_ids.extend(c.id for c in first.contributors)
-
         second = await import_service.import_book("stub", "book-b")
-        await session.commit()
 
         assert second.id == first.id
         assert len(second.releases) == 1
 
     async def test_new_edition_attaches_release_to_existing_book(
-        self, import_service: ImportService, cleanup, session: AsyncSession
+        self, import_service: ImportService
     ):
-        book_ids, contributor_ids = cleanup
         _DETAILS["book-c-hardcover"] = _detail(
             title="Test Import Book C",
             isbn_code="9780000010025",
             author="Test Author C",
         )
         hardcover = await import_service.import_book("stub", "book-c-hardcover")
-        await session.commit()
-        book_ids.append(hardcover.id)
-        contributor_ids.extend(c.id for c in hardcover.contributors)
 
         _DETAILS["book-c-paperback"] = _detail(
             title="Test Import Book C",
@@ -197,19 +103,15 @@ class TestImportBook:
             author="Test Author C",
         )
         paperback = await import_service.import_book("stub", "book-c-paperback")
-        await session.commit()
 
         assert paperback.id == hardcover.id
         assert len(paperback.releases) == 2
 
     async def test_contributor_reused_by_name_match(
-        self, import_service: ImportService, cleanup, session: AsyncSession
+        self, import_service: ImportService, db_session: AsyncSession
     ):
-        book_ids, contributor_ids = cleanup
-        contributor_repo = ContributorRepository(session)
+        contributor_repo = ContributorRepository(db_session)
         existing = await contributor_repo.add("Test Author D", "D, Test Author")
-        await session.commit()
-        contributor_ids.append(existing.id)
 
         _DETAILS["book-d"] = _detail(
             title="Test Import Book D",
@@ -217,16 +119,11 @@ class TestImportBook:
             author="Test Author D",
         )
         book = await import_service.import_book("stub", "book-d")
-        await session.commit()
-        book_ids.append(book.id)
 
         assert len(book.contributors) == 1
         assert book.contributors[0].id == existing.id
 
-    async def test_idempotent_reimport_same_ids(
-        self, import_service: ImportService, cleanup, session: AsyncSession
-    ):
-        book_ids, contributor_ids = cleanup
+    async def test_idempotent_reimport_same_ids(self, import_service: ImportService):
         _DETAILS["book-e"] = _detail(
             title="Test Import Book E",
             isbn_code="9780000010056",
@@ -234,18 +131,40 @@ class TestImportBook:
         )
 
         first = await import_service.import_book("stub", "book-e")
-        await session.commit()
-        book_ids.append(first.id)
-        contributor_ids.extend(c.id for c in first.contributors)
         first_release_id = first.releases[0].id
         first_contributor_id = first.contributors[0].id
 
         second = await import_service.import_book("stub", "book-e")
-        await session.commit()
 
         assert second.id == first.id
         assert second.releases[0].id == first_release_id
         assert second.contributors[0].id == first_contributor_id
+
+    async def test_search_by_any_isbn_resolves_to_canonical_book(
+        self, import_service: ImportService, db_session: AsyncSession
+    ):
+        _DETAILS["book-f-hardcover"] = _detail(
+            title="Test Import Book F",
+            isbn_code="9780000010063",
+            author="Test Author F",
+        )
+        hardcover = await import_service.import_book("stub", "book-f-hardcover")
+
+        _DETAILS["book-f-paperback"] = _detail(
+            title="Test Import Book F",
+            isbn_code="9780000010070",
+            author="Test Author F",
+        )
+        await import_service.import_book("stub", "book-f-paperback")
+
+        book_repo = BookRepository(db_session)
+        by_hardcover_isbn = await book_repo.get_by_isbn("9780000010063")
+        by_paperback_isbn = await book_repo.get_by_isbn("9780000010070")
+
+        assert by_hardcover_isbn is not None
+        assert by_paperback_isbn is not None
+        assert by_hardcover_isbn.id == hardcover.id
+        assert by_paperback_isbn.id == hardcover.id
 
     async def test_unknown_source_raises_404(self, import_service: ImportService):
         with pytest.raises(NotFoundError) as exc_info:

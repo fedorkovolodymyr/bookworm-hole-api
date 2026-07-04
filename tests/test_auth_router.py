@@ -78,6 +78,18 @@ async def test_register_duplicate_email(client: AsyncClient):
     assert response.status_code == 409
 
 
+async def test_register_missing_password_returns_422(client: AsyncClient):
+    response = await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "reader@example.com",
+            "username": "reader",
+            "display_name": "Reader",
+        },
+    )
+    assert response.status_code == 422
+
+
 async def test_login_success(client: AsyncClient):
     response = await client.post(
         "/api/v1/auth/login",
