@@ -81,12 +81,28 @@ class AppSettings(BaseSettings):
     )
 
 
+class OpenLibrarySettings(BaseSettings):
+    base_url: str = "https://openlibrary.org"
+    covers_base_url: str = "https://covers.openlibrary.org"
+    timeout_seconds: float = 5.0
+    retries: int = 2
+
+    model_config = SettingsConfigDict(
+        env_prefix="OPEN_LIBRARY_",
+        case_sensitive=False,
+        extra="ignore",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+
 class Settings:
     def __init__(self):
         self.api_settings = APISettings()
         self.postgres_settings = PostgresSettings()
         self.auth_settings = AuthSettings()
         self.app_settings = AppSettings()
+        self.open_library_settings = OpenLibrarySettings()
 
         if (
             self.app_settings.app_env == "prod"
