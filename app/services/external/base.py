@@ -20,6 +20,11 @@ class BookSourceAdapter(ABC):
         self, isbn: str, session: AsyncSession
     ) -> ExternalSourceRecord | None: ...
 
+    @abstractmethod
+    async def get_detail(
+        self, source_id: str, session: AsyncSession
+    ) -> "ExternalBookDetail | None": ...
+
 
 @dataclass(frozen=True)
 class ExternalContributor:

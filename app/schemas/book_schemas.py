@@ -85,6 +85,11 @@ class CreateReleaseSchema(BaseModel):
     description_override: str | None = None
 
 
+class ImportBookRequest(BaseModel):
+    source: str
+    source_id: str
+
+
 class UpdateReleaseSchema(BaseModel):
     format: ReleaseFormat | None = None
     publisher: str | None = None

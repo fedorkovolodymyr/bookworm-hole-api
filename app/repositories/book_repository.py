@@ -24,7 +24,11 @@ class BookRepository:
         result = await self.session.execute(
             select(Book)
             .where(col(Book.id) == book_id)
-            .options(selectinload(Book.releases).selectinload(Release.isbns))  # pyright: ignore[reportArgumentType]
+            .options(
+                selectinload(Book.releases).selectinload(Release.isbns),  # pyright: ignore[reportArgumentType]
+                selectinload(Book.contributors),  # pyright: ignore[reportArgumentType]
+            )
+            .execution_options(populate_existing=True)
         )
         return result.scalars().first()
 
