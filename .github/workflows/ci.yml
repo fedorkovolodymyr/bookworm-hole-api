@@ -9,17 +9,24 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_USER: bookwormhole
+      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: bookwormhole
+      POSTGRES_PORT: 5432
+
     services:
       postgres:
         image: postgres:17-bookworm
         env:
-          POSTGRES_USER: bookwormhole
-          POSTGRES_PASSWORD: secretpassword
-          POSTGRES_DB: bookwormhole
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U bookwormhole -d bookwormhole"
+          --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -40,19 +47,19 @@ jobs:
       - name: Install dependencies
         run: task install
 
+      - name: Lint (ruff + pyright)
+        run: task lint
+
       - name: Configure environment
         run: |
-          printf 'POSTGRES_HOST=localhost\n' >> .env
-          printf 'POSTGRES_USER=bookwormhole\n' >> .env
-          printf 'POSTGRES_PASSWORD=secretpassword\n' >> .env
-          printf 'POSTGRES_DB=bookwormhole\n' >> .env
-          printf 'POSTGRES_PORT=5432\n' >> .env
+          printf 'POSTGRES_HOST=%s\n' "$POSTGRES_HOST" >> .env
+          printf 'POSTGRES_USER=%s\n' "$POSTGRES_USER" >> .env
+          printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD" >> .env
+          printf 'POSTGRES_DB=%s\n' "$POSTGRES_DB" >> .env
+          printf 'POSTGRES_PORT=%s\n' "$POSTGRES_PORT" >> .env
 
       - name: Apply migrations
         run: task alembic-upgrade
-
-      - name: Lint (ruff + pyright)
-        run: task lint
 
       - name: Test
         run: task test
