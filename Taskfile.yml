@@ -52,9 +52,9 @@ tasks:
       - task: lint
 
   test:
-    desc: Run tests with pytest
+    desc: Run tests with pytest against an isolated test database (auto-created/migrated)
     cmds:
-      - "{{.UV}} run pytest {{.CLI_ARGS}}"
+      - "{{.UV}} run pytest --cov --cov-report=term-missing {{.CLI_ARGS}}"
 
   type-check:
     desc: Run pyright type checker only
@@ -161,9 +161,9 @@ tasks:
     cmd: "{{.DC}} exec api bash"
 
   test-container:
-    desc: Run pytest inside the running api container
+    desc: Run pytest inside the running api container, against an isolated test database
     dotenv: [".env"]
-    cmd: "{{.DC}} exec api uv run pytest {{.CLI_ARGS}}"
+    cmd: "{{.DC}} exec api uv run pytest --cov --cov-report=term-missing {{.CLI_ARGS}}"
 
   lint-container:
     desc: Run ruff check inside the running api container

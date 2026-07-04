@@ -76,7 +76,11 @@ async def modify_book(
     return await service.modify_book(book_id, updated_book)
 
 
-@books_router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
+@books_router.delete(
+    "/{book_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_admin)],
+)
 async def delete_book(
     book_id: UUID,
     service: BookService = Depends(get_book_service),

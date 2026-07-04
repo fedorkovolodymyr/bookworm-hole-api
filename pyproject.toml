@@ -28,6 +28,7 @@ dev = [
     "pre-commit>=4.0.0",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
     "pyright>=1.1.407",
     "respx>=0.21.1",
     "ruff>=0.14.9",
@@ -49,6 +50,13 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["app"]
+
+[tool.coverage.report]
+fail_under = 80
+exclude_lines = ["if TYPE_CHECKING:", "pragma: no cover"]
 
 [tool.ruff.lint]
 extend-select = ["BLE", "B", "SIM", "UP", "RUF", "ASYNC"]

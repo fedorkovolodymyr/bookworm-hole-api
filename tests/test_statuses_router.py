@@ -1,33 +1,13 @@
-import pytest
-from httpx import ASGITransport, AsyncClient
-from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import col, delete
+from collections.abc import AsyncIterator
 
-from app.core.db import get_session
+import pytest
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.deps import get_current_user
 from app.main import app
-from app.models.book_status import BookStatus
 from app.models.catalog import Book as BookModel
 from app.models.user import User
-
-
-@pytest.fixture
-async def client():
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as ac:
-        yield ac
-    app.dependency_overrides.clear()
-
-
-async def _persist_user(email: str, username: str, display_name: str) -> User:
-    async for session in get_session():
-        user = User(email=email, username=username, display_name=display_name)
-        session.add(user)
-        await session.commit()
-        await session.refresh(user)
-        return user
-    raise RuntimeError("no session")
 
 
 def _login_as(user: User) -> None:
@@ -35,56 +15,47 @@ def _login_as(user: User) -> None:
 
 
 @pytest.fixture
-async def owner(client: AsyncClient):
-    owner = await _persist_user("owner@example.com", "owner", "Owner")
+async def owner(
+    db_session: AsyncSession, async_client: AsyncClient
+) -> AsyncIterator[User]:
+    owner = User(email="owner@example.com", username="owner", display_name="Owner")
+    db_session.add(owner)
+    await db_session.commit()
+    await db_session.refresh(owner)
     _login_as(owner)
     yield owner
-    async for session in get_session():
-        await session.execute(delete(User).where(col(User.id) == owner.id))
-        await session.commit()
+    app.dependency_overrides.pop(get_current_user, None)
 
 
 @pytest.fixture
-async def other(client: AsyncClient):
-    other = await _persist_user("other@example.com", "other", "Other")
-    yield other
-    async for session in get_session():
-        await session.execute(delete(User).where(col(User.id) == other.id))
-        await session.commit()
+async def other(db_session: AsyncSession) -> User:
+    other = User(email="other@example.com", username="other", display_name="Other")
+    db_session.add(other)
+    await db_session.commit()
+    await db_session.refresh(other)
+    return other
 
 
 @pytest.fixture
-async def book():
-    try:
-        async for session in get_session():
-            book = BookModel(title="Dune", description="Desert planet epic")
-            session.add(book)
-            await session.commit()
-            await session.refresh(book)
-
-            yield book
-
-            await session.execute(delete(BookModel).where(col(BookModel.id) == book.id))
-            await session.commit()
-    except (SQLAlchemyError, OSError) as exc:
-        pytest.skip(f"database unavailable: {exc}")
-
-
-async def _cleanup_status(status_id):
-    async for session in get_session():
-        await session.execute(delete(BookStatus).where(col(BookStatus.id) == status_id))
-        await session.commit()
+async def book(db_session: AsyncSession) -> BookModel:
+    book = BookModel(title="Dune", description="Desert planet epic")
+    db_session.add(book)
+    await db_session.commit()
+    await db_session.refresh(book)
+    return book
 
 
 class TestCreateStatus:
-    async def test_requires_auth(self, client: AsyncClient, book):
-        response = await client.post(
+    async def test_requires_auth(self, async_client: AsyncClient, book: BookModel):
+        response = await async_client.post(
             "/api/v1/me/statuses/", json={"book_id": str(book.id), "status": "owned"}
         )
         assert response.status_code == 401
 
-    async def test_creates_status(self, client: AsyncClient, owner: User, book):
-        response = await client.post(
+    async def test_creates_status(
+        self, async_client: AsyncClient, owner: User, book: BookModel
+    ):
+        response = await async_client.post(
             "/api/v1/me/statuses/",
             json={"book_id": str(book.id), "status": "owned", "notes": "hardcover"},
         )
@@ -96,95 +67,128 @@ class TestCreateStatus:
         assert data["status"] == "owned"
         assert data["notes"] == "hardcover"
         assert data["acquired_at"] is not None
-        await _cleanup_status(data["id"])
 
     async def test_requires_exactly_one_target(
-        self, client: AsyncClient, owner: User, book
+        self, async_client: AsyncClient, owner: User, book: BookModel
     ):
-        response = await client.post("/api/v1/me/statuses/", json={"status": "owned"})
+        response = await async_client.post(
+            "/api/v1/me/statuses/", json={"status": "owned"}
+        )
         assert response.status_code == 422
 
 
 class TestListStatuses:
     async def test_filters_by_status_and_owner(
-        self, client: AsyncClient, owner: User, other: User, book
+        self,
+        async_client: AsyncClient,
+        owner: User,
+        other: User,
+        book: BookModel,
     ):
-        owned = await client.post(
+        owned = await async_client.post(
             "/api/v1/me/statuses/", json={"book_id": str(book.id), "status": "owned"}
         )
-        wishlist = await client.post(
+        await async_client.post(
             "/api/v1/me/statuses/", json={"book_id": str(book.id), "status": "wishlist"}
         )
 
-        response = await client.get("/api/v1/me/statuses/", params={"status": "owned"})
+        response = await async_client.get(
+            "/api/v1/me/statuses/", params={"status": "owned"}
+        )
         assert response.status_code == 200
         data = response.json()
         assert {item["id"] for item in data} == {owned.json()["id"]}
 
         _login_as(other)
-        other_response = await client.get("/api/v1/me/statuses/")
+        other_response = await async_client.get("/api/v1/me/statuses/")
         assert other_response.json() == []
 
-        await _cleanup_status(owned.json()["id"])
-        await _cleanup_status(wishlist.json()["id"])
+    async def test_requires_auth(self, async_client: AsyncClient):
+        response = await async_client.get("/api/v1/me/statuses/")
+        assert response.status_code == 401
 
 
 class TestModifyStatus:
-    async def test_updates_status(self, client: AsyncClient, owner: User, book):
-        created = await client.post(
+    async def test_updates_status(
+        self, async_client: AsyncClient, owner: User, book: BookModel
+    ):
+        created = await async_client.post(
             "/api/v1/me/statuses/", json={"book_id": str(book.id), "status": "wishlist"}
         )
         status_id = created.json()["id"]
 
-        response = await client.patch(
+        response = await async_client.patch(
             f"/api/v1/me/statuses/{status_id}", json={"status": "owned"}
         )
         assert response.status_code == 200
         assert response.json()["status"] == "owned"
 
-        await _cleanup_status(status_id)
-
     async def test_not_found_for_non_owner(
-        self, client: AsyncClient, owner: User, other: User, book
+        self,
+        async_client: AsyncClient,
+        owner: User,
+        other: User,
+        book: BookModel,
     ):
-        created = await client.post(
+        created = await async_client.post(
             "/api/v1/me/statuses/", json={"book_id": str(book.id), "status": "owned"}
         )
         status_id = created.json()["id"]
 
         _login_as(other)
-        response = await client.patch(
+        response = await async_client.patch(
             f"/api/v1/me/statuses/{status_id}", json={"status": "sold"}
         )
         assert response.status_code == 404
 
-        await _cleanup_status(status_id)
+    async def test_requires_auth(self, async_client: AsyncClient):
+        response = await async_client.patch(
+            "/api/v1/me/statuses/00000000-0000-0000-0000-000000000000",
+            json={"status": "sold"},
+        )
+        assert response.status_code == 401
 
 
 class TestDeleteStatus:
-    async def test_deletes_status(self, client: AsyncClient, owner: User, book):
-        created = await client.post(
+    async def test_deletes_status(
+        self, async_client: AsyncClient, owner: User, book: BookModel
+    ):
+        created = await async_client.post(
             "/api/v1/me/statuses/", json={"book_id": str(book.id), "status": "owned"}
         )
         status_id = created.json()["id"]
 
-        response = await client.delete(f"/api/v1/me/statuses/{status_id}")
+        response = await async_client.delete(f"/api/v1/me/statuses/{status_id}")
         assert response.status_code == 204
 
-        follow_up = await client.patch(
+        follow_up = await async_client.patch(
             f"/api/v1/me/statuses/{status_id}", json={"status": "sold"}
         )
         assert follow_up.status_code == 404
 
+    async def test_not_found(self, async_client: AsyncClient, owner: User):
+        response = await async_client.delete(
+            "/api/v1/me/statuses/00000000-0000-0000-0000-000000000000"
+        )
+        assert response.status_code == 404
+
+    async def test_requires_auth(self, async_client: AsyncClient):
+        response = await async_client.delete(
+            "/api/v1/me/statuses/00000000-0000-0000-0000-000000000000"
+        )
+        assert response.status_code == 401
+
 
 class TestLendAndReturn:
-    async def test_lend_marks_lent_out(self, client: AsyncClient, owner: User, book):
-        created = await client.post(
+    async def test_lend_marks_lent_out(
+        self, async_client: AsyncClient, owner: User, book: BookModel
+    ):
+        created = await async_client.post(
             "/api/v1/me/statuses/", json={"book_id": str(book.id), "status": "owned"}
         )
         status_id = created.json()["id"]
 
-        response = await client.post(
+        response = await async_client.post(
             f"/api/v1/me/statuses/{status_id}/lend",
             json={"lent_to_name": "Alice"},
         )
@@ -195,20 +199,18 @@ class TestLendAndReturn:
         assert data["lent_at"] is not None
         assert data["returned_at"] is None
 
-        await _cleanup_status(status_id)
-
     async def test_return_reverts_to_owned(
-        self, client: AsyncClient, owner: User, book
+        self, async_client: AsyncClient, owner: User, book: BookModel
     ):
-        created = await client.post(
+        created = await async_client.post(
             "/api/v1/me/statuses/", json={"book_id": str(book.id), "status": "owned"}
         )
         status_id = created.json()["id"]
-        await client.post(
+        await async_client.post(
             f"/api/v1/me/statuses/{status_id}/lend", json={"lent_to_name": "Alice"}
         )
 
-        response = await client.post(f"/api/v1/me/statuses/{status_id}/return")
+        response = await async_client.post(f"/api/v1/me/statuses/{status_id}/return")
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "owned"
@@ -216,48 +218,53 @@ class TestLendAndReturn:
         assert data["lent_to_name"] is None
         assert data["lent_to_user_id"] is None
 
-        await _cleanup_status(status_id)
-
     async def test_lend_requires_exactly_one_target(
-        self, client: AsyncClient, owner: User, book
+        self, async_client: AsyncClient, owner: User, book: BookModel
     ):
-        created = await client.post(
+        created = await async_client.post(
             "/api/v1/me/statuses/", json={"book_id": str(book.id), "status": "owned"}
         )
         status_id = created.json()["id"]
 
-        response = await client.post(
+        response = await async_client.post(
             f"/api/v1/me/statuses/{status_id}/lend",
             json={"lent_to_name": "Alice", "lent_to_user_id": str(status_id)},
         )
         assert response.status_code == 422
 
-        await _cleanup_status(status_id)
-
     async def test_lend_rejects_non_owned_status(
-        self, client: AsyncClient, owner: User, book
+        self, async_client: AsyncClient, owner: User, book: BookModel
     ):
-        created = await client.post(
+        created = await async_client.post(
             "/api/v1/me/statuses/", json={"book_id": str(book.id), "status": "wishlist"}
         )
         status_id = created.json()["id"]
 
-        response = await client.post(
+        response = await async_client.post(
             f"/api/v1/me/statuses/{status_id}/lend", json={"lent_to_name": "Alice"}
         )
         assert response.status_code == 409
 
-        await _cleanup_status(status_id)
-
     async def test_return_rejects_non_lent_out_status(
-        self, client: AsyncClient, owner: User, book
+        self, async_client: AsyncClient, owner: User, book: BookModel
     ):
-        created = await client.post(
+        created = await async_client.post(
             "/api/v1/me/statuses/", json={"book_id": str(book.id), "status": "owned"}
         )
         status_id = created.json()["id"]
 
-        response = await client.post(f"/api/v1/me/statuses/{status_id}/return")
+        response = await async_client.post(f"/api/v1/me/statuses/{status_id}/return")
         assert response.status_code == 409
 
-        await _cleanup_status(status_id)
+    async def test_lend_requires_auth(self, async_client: AsyncClient):
+        response = await async_client.post(
+            "/api/v1/me/statuses/00000000-0000-0000-0000-000000000000/lend",
+            json={"lent_to_name": "Alice"},
+        )
+        assert response.status_code == 401
+
+    async def test_return_requires_auth(self, async_client: AsyncClient):
+        response = await async_client.post(
+            "/api/v1/me/statuses/00000000-0000-0000-0000-000000000000/return"
+        )
+        assert response.status_code == 401

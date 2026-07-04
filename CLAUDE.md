@@ -5,7 +5,7 @@
 - `task format` — ruff import sort + format
 - `task lint` — ruff check + pyright (both must pass)
 - `task type-check` — pyright only
-- `task test` — pytest (asyncio_mode=auto)
+- `task test` — pytest (asyncio_mode=auto), against an isolated `*_test` database auto-created/migrated at session start, with coverage report
 - `task test -- --collect-only` — verify pytest config loads
 - `task precommit-install` — install git pre-commit hooks (required first-time setup)
 - `task precommit` — run all pre-commit hooks against every file (same set CI runs)
@@ -67,13 +67,28 @@ API served at `http://localhost:${API_PORT}`. Run `task precommit-install` from 
 Layers: `routers/` → `services/` → `repositories/` → `models/`, `schemas/`
 DB queries in repositories only. Business logic in services only.
 
-## Key Files
+## Routers
 
-- `app/repositories/book_repository.py` — BookRepository (async CRUD pattern to follow)
-- `app/models/mixins.py` — IdMixin, TimestampMixin (use for all models)
-- `app/models/catalog.py` — Book, Release, Contributor + join tables (bidirectional relationships, see Models rule below)
-- `app/core/db.py` — get_session() DI dependency
-- `app/core/config.py` — Settings class (api_settings, postgres_settings, auth_settings, app_settings, sentry_settings); import as `from app.core.config import settings`, or inject via `Depends(get_settings)` (`@lru_cache`-backed)
+- Every endpoint must render clearly in Swagger: set `summary` (short) and, when the behavior isn't obvious from the path/method, a docstring — both show up in the OpenAPI UI. Skip both when the path/method already say it (e.g. `GET /books/{book_id}` needs no summary).
+- Keep endpoint signatures explicit and typed (path/query params, request/response schemas) — this is what Swagger renders and what test clients rely on to build valid requests.
+- Endpoints must stay thin (parse input, call service, return) so they're trivial to exercise in route tests — no business logic or branching in the router itself.
+- No duplicated documentation: don't restate what the schema/type already says. Add `Field(description=...)`/`examples=` only for non-obvious fields (formats, units, valid ranges) — not for self-explanatory ones like `id: UUID`.
+- Error responses must never be hand-repeated per endpoint, for any status code (401/403/404/409/422/whatever an endpoint can raise). Define each once as a shared `responses` dict per error kind (e.g. `NOT_FOUND_RESPONSE`, `CONFLICT_RESPONSE`, `ADMIN_RESPONSES` in `app/core/errors.py` or `app/routers/responses.py`) and attach it automatically at whatever already carries that behavior, instead of retyping it at each route:
+  - Any status tied to a dependency (401/403 from `require_admin`, `require_auth`, etc.) is declared on that dependency's shared `responses` dict once, then merged onto every `APIRouter`/route group that uses `dependencies=[Depends(require_admin)]` — the doc travels with the dependency automatically.
+  - Any status tied to a domain error class (`NotFoundError` → 404, `ConflictError` → 409, ...) gets one shared dict per error class, merged into `responses=` only on endpoints whose service path can actually raise it — never re-typed inline.
+  - If FastAPI/OpenAPI tooling can generate a status's schema from the exception type automatically, prefer that over any hand-maintained dict.
+
+## Project Structure
+
+```text
+app/
+  core/         config, db session, errors, auth deps, lifespan (Sentry init)
+  models/       SQLModel tables (catalog.py: Book/Release/Contributor + joins; mixins.py: IdMixin, TimestampMixin)
+  repositories/ async CRUD, DB queries only (book_repository.py — pattern to follow)
+  routers/      FastAPI endpoints, thin (parse input, call service, return)
+  schemas/      Pydantic request/response models
+  services/     business logic (services/external/ — BookSourceAdapter + OpenLibrary etc.)
+```
 
 ## Models
 
@@ -118,6 +133,13 @@ DB queries in repositories only. Business logic in services only.
 - Cover all cases: success paths + all error paths (validation, not-found, conflict, etc).
 - Assert all relevant response/model attributes, not just status code.
 - Partial-update (`PATCH`) endpoints: parametrized test per field of the Update schema, asserting both the changed field and that every other field stayed at its original value (catches the update method overwriting unset fields with `None`).
+- Tests must be fast and simple — minimal setup, no unnecessary work.
+- Structure each test Arrange-Act-Assert, but don't label the sections with comments.
+- Write tests to be easy to read and understand at a glance.
+- Cover every variable/argument combination that matters, not just the happy path.
+- Cover the success path and every error path.
+- Cover all possible execution branches.
+- Prefer fakes over mocks — cheaper to run, closer to real behavior.
 
 ## Code Style
 
@@ -132,8 +154,3 @@ DB queries in repositories only. Business logic in services only.
 ## Git
 
 - Commit messages: one line only, no body. Conventional Commits format: `<type>(<scope>): <description>`
-
-## Skills
-
-- `/gh-issue-agent <N>` — full issue-to-PR pipeline (fetch→investigate→plan→implement→lint→test→review→PR)
-- `/gh-add-issue` — add issue to BACKEND_ISSUES.md

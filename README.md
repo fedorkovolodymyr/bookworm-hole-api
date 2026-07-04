@@ -52,7 +52,7 @@ Used inside the dev container or a local venv (see [CLAUDE.md](CLAUDE.md) for se
 - `task format` — ruff import sort + format
 - `task lint` — ruff check + pyright
 - `task type-check` — pyright only
-- `task test` — pytest
+- `task test` — pytest, against an isolated `*_test` database (auto-created/migrated), with coverage report
 - `task precommit-install` — install git pre-commit hooks (required first-time setup)
 - `task precommit` — run all pre-commit hooks against every file
 - `task alembic-revision -- "message"` / `task alembic-upgrade` — migrations via local uv
