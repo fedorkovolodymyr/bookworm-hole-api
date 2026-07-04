@@ -16,6 +16,7 @@ cp .env.example .env   # once
 task up                 # build + start api, postgres, redis via docker compose
 task migrate            # apply Alembic migrations, inside the api container
 task seed                # load dev seed data
+task precommit-install   # required: installs git pre-commit hooks
 ```
 
 API served at `http://localhost:${API_PORT}`.
@@ -52,6 +53,8 @@ Used inside the dev container or a local venv (see [CLAUDE.md](CLAUDE.md) for se
 - `task lint` — ruff check + pyright
 - `task type-check` — pyright only
 - `task test` — pytest
+- `task precommit-install` — install git pre-commit hooks (required first-time setup)
+- `task precommit` — run all pre-commit hooks against every file
 - `task alembic-revision -- "message"` / `task alembic-upgrade` — migrations via local uv
 
 **⚠️ Important**: Always run migrations after pulling changes or before starting the app.

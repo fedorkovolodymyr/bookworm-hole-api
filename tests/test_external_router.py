@@ -127,7 +127,7 @@ async def cleanup():
 
 class TestImportBookRoute:
     async def test_admin_imports_new_book(self, admin_client: AsyncClient, cleanup):
-        book_ids, contributor_ids = cleanup
+        book_ids, _contributor_ids = cleanup
         _DETAILS["router-book-a"] = ExternalBookDetail(
             title="Test Router Book A",
             description="desc",

@@ -1,9 +1,7 @@
-from typing import Any, TypeVar
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import SQLModel, select
-
-ModelT = TypeVar("ModelT", bound=SQLModel)
 
 DEV_CONTRIBUTORS: list[dict[str, Any]] = [
     {
@@ -41,7 +39,7 @@ DEV_USERS: list[dict[str, Any]] = [
 ]
 
 
-async def upsert_by(
+async def upsert_by[ModelT: SQLModel](
     session: AsyncSession,
     model: type[ModelT],
     field: str,

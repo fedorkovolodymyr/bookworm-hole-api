@@ -15,7 +15,7 @@ class Collection(SQLModel, IdMixin, TimestampMixin, table=True):
     cover_image_url: str | None = Field(default=None, max_length=2048)
     sort_order: int = Field(default=0)
 
-    items: list["CollectionItem"] = Relationship(back_populates="collection")
+    items: list[CollectionItem] = Relationship(back_populates="collection")
 
 
 class CollectionItem(SQLModel, IdMixin, table=True):

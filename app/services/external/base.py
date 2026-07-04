@@ -23,7 +23,7 @@ class BookSourceAdapter(ABC):
     @abstractmethod
     async def get_detail(
         self, source_id: str, session: AsyncSession
-    ) -> "ExternalBookDetail | None": ...
+    ) -> ExternalBookDetail | None: ...
 
 
 @dataclass(frozen=True)

@@ -61,6 +61,16 @@ tasks:
     cmds:
       - "{{.UV}} run pyright {{.CLI_ARGS}}"
 
+  precommit-install:
+    desc: Install git pre-commit hooks (required first-time setup)
+    cmds:
+      - "{{.UV}} run pre-commit install"
+
+  precommit:
+    desc: Run all pre-commit hooks against every file
+    cmds:
+      - "{{.UV}} run pre-commit run --all-files {{.CLI_ARGS}}"
+
   docker-compose:
     desc: Docker-compose services
     dotenv: [".env"]
