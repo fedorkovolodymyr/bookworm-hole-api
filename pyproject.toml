@@ -17,6 +17,7 @@ dependencies = [
     "pydantic[email]>=2.12.5",
     "pyjwt>=2.10.0",
     "python-stdnum>=2.2",
+    "sentry-sdk[fastapi]>=2.19.0",
     "sqlalchemy[asyncio]>=2.0.45",
     "sqlmodel>=0.0.31",
     "uvicorn[standard]>=0.38.0",

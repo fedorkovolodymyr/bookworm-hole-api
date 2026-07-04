@@ -48,3 +48,17 @@ def test_prod_env_with_custom_secret_key_succeeds(monkeypatch: pytest.MonkeyPatc
         settings.auth_settings.secret_key
         != AuthSettings.model_fields["secret_key"].default
     )
+
+
+def test_sentry_settings_defaults_to_disabled():
+    assert get_settings().sentry_settings.dsn is None
+
+
+def test_sentry_settings_reads_env(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("SENTRY_DSN", "https://example@sentry.io/1")
+    monkeypatch.setenv("SENTRY_TRACES_SAMPLE_RATE", "0.5")
+    monkeypatch.setenv("SENTRY_PROFILES_SAMPLE_RATE", "0.2")
+    sentry_settings = get_settings().sentry_settings
+    assert sentry_settings.dsn == "https://example@sentry.io/1"
+    assert sentry_settings.traces_sample_rate == 0.5
+    assert sentry_settings.profiles_sample_rate == 0.2

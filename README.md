@@ -66,3 +66,7 @@ Used inside the dev container or a local venv (see [CLAUDE.md](CLAUDE.md) for se
 ### Environment configuration
 
 Copy `.env.example` to `.env` (single file, used both locally and by docker compose). `POSTGRES_HOST`/`REDIS_HOST` are overridden to `postgres`/`redis` automatically inside docker compose — no separate `.env.docker` needed.
+
+### Error tracking (Sentry)
+
+Set `SENTRY_DSN` in `.env` to enable Sentry. Leave it blank to disable (default in local dev — no-op, no external calls). See CLAUDE.md for details.

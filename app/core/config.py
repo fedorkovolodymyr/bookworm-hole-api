@@ -96,6 +96,20 @@ class OpenLibrarySettings(BaseSettings):
     )
 
 
+class SentrySettings(BaseSettings):
+    dsn: str | None = None
+    traces_sample_rate: float = 0.0
+    profiles_sample_rate: float = 0.0
+
+    model_config = SettingsConfigDict(
+        env_prefix="SENTRY_",
+        case_sensitive=False,
+        extra="ignore",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+
 class Settings:
     def __init__(self):
         self.api_settings = APISettings()
@@ -103,6 +117,7 @@ class Settings:
         self.auth_settings = AuthSettings()
         self.app_settings = AppSettings()
         self.open_library_settings = OpenLibrarySettings()
+        self.sentry_settings = SentrySettings()
 
         if (
             self.app_settings.app_env == "prod"
