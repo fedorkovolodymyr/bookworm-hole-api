@@ -22,6 +22,6 @@ async def get_session() -> AsyncIterator[AsyncSession]:
         try:
             yield session
             await session.commit()
-        except Exception:  # noqa: BLE001 -- session rollback boundary, must catch any error
+        except Exception:
             await session.rollback()
             raise

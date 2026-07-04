@@ -1,10 +1,10 @@
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 from sqlmodel import col, select
 
 from app.models.catalog import Release
+from app.repositories.loading import eager
 from app.schemas.book_schemas import UpdateReleaseSchema
 
 
@@ -22,7 +22,7 @@ class ReleaseRepository:
         result = await self.session.execute(
             select(Release)
             .where(col(Release.id) == release_id)
-            .options(selectinload(Release.isbns))  # pyright: ignore[reportArgumentType]
+            .options(eager(Release.isbns))
         )
         return result.scalars().first()
 

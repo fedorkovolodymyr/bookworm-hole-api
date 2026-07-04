@@ -2,7 +2,6 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 from sqlmodel import col, select
 
 from app.models.catalog import (
@@ -15,6 +14,7 @@ from app.models.catalog import (
     ReleaseContributor,
     ReleaseFormat,
 )
+from app.repositories.loading import eager, eager_nested
 
 
 class ImportRepository:
@@ -31,8 +31,8 @@ class ImportRepository:
             select(Book)
             .where(col(Book.title) == title)
             .options(
-                selectinload(Book.contributors),  # pyright: ignore[reportArgumentType]
-                selectinload(Book.releases).selectinload(Release.isbns),  # pyright: ignore[reportArgumentType]
+                eager(Book.contributors),
+                eager_nested(Book.releases, Release.isbns),
             )
         )
         for book in result.scalars().all():

@@ -68,7 +68,7 @@ DB queries in repositories only. Business logic in services only.
 - Services raise these directly (`raise NotFoundError("...")`) instead of `raise HTTPException(...)` or wrapping calls in `try/except Exception`. A single handler in `app/main.py` (`@app.exception_handler(AppError)`) translates any `AppError` to a JSON response — no per-service try/except needed to get an HTTP response.
 - Recurring error message strings go in `ErrorMessages` (`app/core/errors.py`), not inline literals, so they aren't duplicated across call sites.
 - Never catch bare `except Exception`. Ruff enforces this via `flake8-blind-except` (`BLE` in `[tool.ruff.lint] extend-select`). Catch the narrowest exception type that can actually occur (e.g. `jwt.PyJWTError`, `httpx.HTTPError`, `sqlalchemy.exc.SQLAlchemyError`) and either re-raise as an `AppError` subclass or let it propagate.
-- The one sanctioned bare-except is `app/core/db.py::get_session`'s commit/rollback boundary — it must catch anything to roll back the transaction, so it carries an explicit `# noqa: BLE001` with a comment explaining why.
+- The one sanctioned bare-except is `app/core/db.py::get_session`'s commit/rollback boundary — it must catch anything to roll back the transaction. No `# noqa` needed: ruff's `BLE001` doesn't flag `except Exception` blocks that end in a bare `raise` (pure re-raise, nothing swallowed).
 - At the adapter boundary (`app/services/external/`), catch the external library's specific exception (e.g. `httpx.HTTPError`) and re-raise as `ExternalServiceError` — callers in `services/` then don't need their own try/except around adapter calls.
 
 ## Gotchas
@@ -94,6 +94,7 @@ DB queries in repositories only. Business logic in services only.
 - Comments: rare, only when non-obvious.
 - Files: small, well-structured. Split big files into smaller ones.
 - Avoid `# type: ignore`. Allowed only in rare cases.
+- No inline `# noqa` / `# pyright: ignore` suppression comments. If a lint/type rule is a real false positive, fix the root cause structurally (e.g. a shared typed helper — see `app/repositories/loading.py::eager`/`eager_nested` for the SQLModel `selectinload()` + pyright mismatch) instead of silencing it at each call site.
 - Use type hints everywhere: function args, return types, variables.
 - Partial-update repository methods (`update(id, data)`) take the Pydantic Update schema (e.g. `UpdateBookSchema`) directly, not `dict`/`dict[str, Any]`. Call `data.model_dump(exclude_unset=True)` then `model.sqlmodel_update(...)` inside the repository method — keeps partial-update semantics (unset fields untouched) while the signature still says what shape the data is. See `app/repositories/book_repository.py::update`.
 
