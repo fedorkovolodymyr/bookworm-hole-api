@@ -17,3 +17,4 @@ class ServiceHealth(BaseModel):
 class HealthCheckResponse(BaseModel):
     status: HealthCheckStatus
     checks: dict[str, ServiceHealth]
+    version: str

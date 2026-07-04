@@ -1,3 +1,5 @@
+from importlib.metadata import PackageNotFoundError, version
+
 from loguru import logger
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
@@ -51,7 +53,15 @@ class HealthService:
                 "api": api_health,
                 "database": db_health,
             },
+            version=self._get_version(),
         )
+
+    def _get_version(self) -> str:
+        try:
+            return version("bookworm-hole-api")
+        except PackageNotFoundError:
+            logger.warning("Package metadata not found, cannot resolve version")
+            return "unknown"
 
     def _get_overall_status(self, *service_healths: ServiceHealth) -> HealthCheckStatus:
         all_healthy = all(

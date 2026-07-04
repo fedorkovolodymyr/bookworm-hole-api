@@ -71,6 +71,16 @@ tasks:
     cmds:
       - "{{.UV}} run pre-commit run --all-files {{.CLI_ARGS}}"
 
+  release:
+    desc: Bump version, tag, and publish a GitHub release from Conventional Commits since last tag
+    cmds:
+      - "{{.UV}} run semantic-release version --commit --tag --changelog --vcs-release {{.CLI_ARGS}}"
+
+  release-dry-run:
+    desc: Preview the next version bump without making changes
+    cmds:
+      - "{{.UV}} run semantic-release version --print {{.CLI_ARGS}}"
+
   docker-compose:
     desc: Docker-compose services
     dotenv: [".env"]
