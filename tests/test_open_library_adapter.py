@@ -2,9 +2,12 @@ import json
 from pathlib import Path
 
 import httpx
+import pytest
 import respx
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.catalog import ISBNKind, ReleaseFormat
+from app.core.db import get_session
+from app.models.external_source import ExternalRefKind
 from app.services.external import get_adapter
 from app.services.external.open_library import OpenLibraryAdapter
 
@@ -15,30 +18,35 @@ def _load_fixture(name: str) -> dict:
     return json.loads((FIXTURES_DIR / name).read_text())
 
 
+@pytest.fixture
+async def session():
+    async for session in get_session():
+        yield session
+
+
 class TestSearch:
     @respx.mock
-    async def test_search_returns_hits(self):
+    async def test_search_persists_raw_docs(self, session: AsyncSession):
         respx.get("https://openlibrary.org/search.json").mock(
             return_value=httpx.Response(200, json=_load_fixture("search_dune.json"))
         )
         adapter = OpenLibraryAdapter()
 
-        hits = await adapter.search("dune")
+        records = await adapter.search("dune", session)
 
-        assert len(hits) == 1
-        hit = hits[0]
-        assert hit.title == "Dune"
-        assert hit.contributors[0].full_name == "Frank Herbert"
-        assert {i.code for i in hit.isbns} == {"9780441013593", "0441013597"}
-        assert (
-            hit.cover_image_url == "https://covers.openlibrary.org/b/id/8314396-L.jpg"
-        )
-        assert hit.raw["key"] == "/works/OL893415W"
+        assert len(records) == 1
+        record = records[0]
+        assert record.source == "open_library"
+        assert record.ref_kind == ExternalRefKind.search
+        assert record.ref == "dune"
+        assert record.payload["title"] == "Dune"
+        assert record.payload["author_name"] == ["Frank Herbert"]
+        assert record.payload["key"] == "/works/OL893415W"
 
 
 class TestGetByIsbn:
     @respx.mock
-    async def test_returns_full_detail(self):
+    async def test_persists_isbn_and_work_doc(self, session: AsyncSession):
         respx.get("https://openlibrary.org/isbn/9780441013593.json").mock(
             return_value=httpx.Response(
                 200, json=_load_fixture("isbn_9780441013593.json")
@@ -49,32 +57,25 @@ class TestGetByIsbn:
         )
         adapter = OpenLibraryAdapter()
 
-        detail = await adapter.get_by_isbn("9780441013593")
+        record = await adapter.get_by_isbn("9780441013593", session)
 
-        assert detail is not None
-        assert detail.title == "Dune"
-        assert detail.publisher == "Ace Books"
-        assert detail.published_year == 1990
-        assert detail.language == "eng"
-        assert detail.format == ReleaseFormat.paperback
-        assert detail.description is not None
-        assert "Arrakis" in detail.description
-        assert ISBNKind.isbn13 in {i.kind for i in detail.isbns}
-        assert (
-            detail.cover_image_url
-            == "https://covers.openlibrary.org/b/id/8314396-L.jpg"
-        )
+        assert record is not None
+        assert record.source == "open_library"
+        assert record.ref_kind == ExternalRefKind.isbn
+        assert record.ref == "9780441013593"
+        assert record.payload["isbn_doc"]["title"] == "Dune"
+        assert "Arrakis" in record.payload["work_doc"]["description"]["value"]
 
     @respx.mock
-    async def test_returns_none_when_not_found(self):
+    async def test_returns_none_when_not_found(self, session: AsyncSession):
         respx.get("https://openlibrary.org/isbn/0000000000000.json").mock(
             return_value=httpx.Response(404)
         )
         adapter = OpenLibraryAdapter()
 
-        detail = await adapter.get_by_isbn("0000000000000")
+        record = await adapter.get_by_isbn("0000000000000", session)
 
-        assert detail is None
+        assert record is None
 
 
 class TestRegistry:
