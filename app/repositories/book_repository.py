@@ -3,10 +3,10 @@ from uuid import UUID
 
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 from sqlmodel import col, select
 
 from app.models.catalog import ISBN, Book, BookContributor, Contributor, Release
+from app.repositories.loading import eager, eager_nested
 from app.schemas.book_schemas import UpdateBookSchema
 
 
@@ -24,7 +24,11 @@ class BookRepository:
         result = await self.session.execute(
             select(Book)
             .where(col(Book.id) == book_id)
-            .options(selectinload(Book.releases).selectinload(Release.isbns))  # pyright: ignore[reportArgumentType]
+            .options(
+                eager_nested(Book.releases, Release.isbns),
+                eager(Book.contributors),
+            )
+            .execution_options(populate_existing=True)
         )
         return result.scalars().first()
 
@@ -34,7 +38,7 @@ class BookRepository:
             .join(Release, col(Release.book_id) == col(Book.id))
             .join(ISBN, col(ISBN.release_id) == col(Release.id))
             .where(col(ISBN.code_normalized) == code_normalized)
-            .options(selectinload(Book.releases).selectinload(Release.isbns))  # pyright: ignore[reportArgumentType]
+            .options(eager_nested(Book.releases, Release.isbns))
         )
         return result.scalars().first()
 

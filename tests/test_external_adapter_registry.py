@@ -10,6 +10,7 @@ from app.services.external import (
     get_adapter,
     register_adapter,
 )
+from app.services.external.base import ExternalBookDetail
 from app.services.external.registry import _registry
 
 
@@ -46,6 +47,11 @@ class FakeAdapter(BookSourceAdapter):
             ref=isbn,
             payload={"title": "Fake Title"},
         )
+
+    async def get_detail(
+        self, source_id: str, session: AsyncSession
+    ) -> ExternalBookDetail | None:
+        return None
 
 
 class TestBookSourceAdapter:

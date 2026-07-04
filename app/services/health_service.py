@@ -1,5 +1,6 @@
 from loguru import logger
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.schemas.health_schemas import (
@@ -31,7 +32,7 @@ class HealthService:
                     message="Database returned unexpected result",
                 )
 
-        except Exception as e:
+        except SQLAlchemyError as e:
             logger.error(f"Database health check failed: {e}")
             return ServiceHealth(
                 status=HealthCheckStatus.UNHEALTHY,

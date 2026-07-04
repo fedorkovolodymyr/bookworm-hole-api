@@ -1,8 +1,9 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from fastapi import HTTPException, status
+import jwt
 
+from app.core.errors import ConflictError, UnauthorizedError
 from app.core.security import create_access_token, create_refresh_token, decode_token
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
@@ -31,9 +32,9 @@ class AuthService:
 
     async def register(self, data: RegisterSchema) -> tuple[User, TokenResponse]:
         if await self.user_repository.get_by_email(data.email):
-            raise HTTPException(status.HTTP_409_CONFLICT, "Email already registered")
+            raise ConflictError("Email already registered")
         if await self.user_repository.get_by_username(data.username):
-            raise HTTPException(status.HTTP_409_CONFLICT, "Username already taken")
+            raise ConflictError("Username already taken")
 
         user = User(
             email=data.email,
@@ -52,55 +53,47 @@ class AuthService:
             or not user.password_hash
             or not verify_password(data.password, user.password_hash)
         ):
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid credentials")
+            raise UnauthorizedError("Invalid credentials")
 
         tokens = await self._issue_tokens(user)
         return user, tokens
 
     async def refresh(self, refresh_token: str) -> TokenResponse:
-        try:
-            payload = decode_token(refresh_token)
-            jti = payload["jti"]
-        except Exception as exc:
-            raise HTTPException(
-                status.HTTP_401_UNAUTHORIZED, "Invalid refresh token"
-            ) from exc
+        jti = self._decode_jti(refresh_token, "Invalid refresh token")
 
         stored = await self.refresh_token_repository.get_by_jti(jti)
         if not stored or stored.revoked_at is not None:
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Refresh token revoked")
+            raise UnauthorizedError("Refresh token revoked")
         if stored.expires_at <= datetime.now(UTC):
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Refresh token expired")
+            raise UnauthorizedError("Refresh token expired")
 
         user = await self.user_repository.get_by_id(stored.user_id)
         if not user:
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not found")
+            raise UnauthorizedError("User not found")
 
         await self.refresh_token_repository.revoke(jti)
         return await self._issue_tokens(user)
 
     async def logout(self, refresh_token: str) -> None:
-        try:
-            payload = decode_token(refresh_token)
-            jti = payload["jti"]
-        except Exception as exc:
-            raise HTTPException(
-                status.HTTP_401_UNAUTHORIZED, "Invalid refresh token"
-            ) from exc
+        jti = self._decode_jti(refresh_token, "Invalid refresh token")
         await self.refresh_token_repository.revoke(jti)
 
     async def get_current_user(self, access_token: str) -> User:
         try:
             payload = decode_token(access_token)
             user_id = UUID(payload["sub"])
-        except Exception as exc:
-            raise HTTPException(
-                status.HTTP_401_UNAUTHORIZED, "Invalid access token"
-            ) from exc
+        except (jwt.PyJWTError, KeyError, ValueError) as exc:
+            raise UnauthorizedError("Invalid access token") from exc
 
         user = await self.user_repository.get_by_id(user_id)
         if not user or not user.is_active:
-            raise HTTPException(
-                status.HTTP_401_UNAUTHORIZED, "User not found or inactive"
-            )
+            raise UnauthorizedError("User not found or inactive")
         return user
+
+    @staticmethod
+    def _decode_jti(token: str, invalid_message: str) -> str:
+        try:
+            payload = decode_token(token)
+            return payload["jti"]
+        except (jwt.PyJWTError, KeyError) as exc:
+            raise UnauthorizedError(invalid_message) from exc

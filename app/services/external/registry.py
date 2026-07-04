@@ -1,11 +1,12 @@
 from collections.abc import Callable
 
+from app.core.errors import NotFoundError
 from app.services.external.base import BookSourceAdapter
 
 _registry: dict[str, type[BookSourceAdapter]] = {}
 
 
-class AdapterNotFoundError(Exception):
+class AdapterNotFoundError(NotFoundError):
     def __init__(self, name: str) -> None:
         super().__init__(f"No adapter registered for '{name}'")
         self.name = name
