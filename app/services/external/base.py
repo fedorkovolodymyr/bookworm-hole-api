@@ -1,8 +1,24 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.catalog import ContributorRole, ISBNKind, ReleaseFormat
+from app.models.external_source import ExternalSourceRecord
+
+
+class BookSourceAdapter(ABC):
+    name: str
+
+    @abstractmethod
+    async def search(
+        self, query: str, session: AsyncSession
+    ) -> list[ExternalSourceRecord]: ...
+
+    @abstractmethod
+    async def get_by_isbn(
+        self, isbn: str, session: AsyncSession
+    ) -> ExternalSourceRecord | None: ...
 
 
 @dataclass(frozen=True)
@@ -23,7 +39,6 @@ class ExternalBookHit:
     contributors: list[ExternalContributor]
     isbns: list[ExternalISBN]
     cover_image_url: str | None = None
-    raw: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -37,14 +52,3 @@ class ExternalBookDetail:
     published_year: int | None
     language: str | None
     cover_image_url: str | None = None
-    raw: dict[str, Any] = field(default_factory=dict)
-
-
-class BookSourceAdapter(ABC):
-    name: str
-
-    @abstractmethod
-    async def search(self, query: str) -> list[ExternalBookHit]: ...
-
-    @abstractmethod
-    async def get_by_isbn(self, isbn: str) -> ExternalBookDetail | None: ...

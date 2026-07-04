@@ -1,45 +1,50 @@
 import pytest
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.catalog import ISBNKind, ReleaseFormat
+from app.core.db import get_session
+from app.models.external_source import ExternalRefKind, ExternalSourceRecord
+from app.repositories.external_source_repository import ExternalSourceRepository
 from app.services.external import (
     AdapterNotFoundError,
     BookSourceAdapter,
-    ExternalBookDetail,
-    ExternalBookHit,
-    ExternalContributor,
-    ExternalISBN,
     get_adapter,
     register_adapter,
 )
 from app.services.external.registry import _registry
 
 
+@pytest.fixture
+async def session():
+    async for session in get_session():
+        yield session
+
+
 class FakeAdapter(BookSourceAdapter):
     name = "fake"
 
-    async def search(self, query: str) -> list[ExternalBookHit]:
-        return [
-            ExternalBookHit(
-                title=f"Result for {query}",
-                contributors=[ExternalContributor(full_name="Jane Doe")],
-                isbns=[ExternalISBN(code="9780134685991", kind=ISBNKind.isbn13)],
-                raw={"source_id": "abc123"},
-            )
-        ]
+    async def search(
+        self, query: str, session: AsyncSession
+    ) -> list[ExternalSourceRecord]:
+        repo = ExternalSourceRepository(session)
+        record = await repo.create(
+            source=self.name,
+            ref_kind=ExternalRefKind.search,
+            ref=query,
+            payload={"title": f"Result for {query}"},
+        )
+        return [record]
 
-    async def get_by_isbn(self, isbn: str) -> ExternalBookDetail | None:
+    async def get_by_isbn(
+        self, isbn: str, session: AsyncSession
+    ) -> ExternalSourceRecord | None:
         if isbn != "9780134685991":
             return None
-        return ExternalBookDetail(
-            title="Fake Title",
-            description="A fake book.",
-            contributors=[ExternalContributor(full_name="Jane Doe")],
-            isbns=[ExternalISBN(code=isbn, kind=ISBNKind.isbn13)],
-            format=ReleaseFormat.paperback,
-            publisher="Fake Press",
-            published_year=2020,
-            language="en",
-            raw={"source_id": "abc123"},
+        repo = ExternalSourceRepository(session)
+        return await repo.create(
+            source=self.name,
+            ref_kind=ExternalRefKind.isbn,
+            ref=isbn,
+            payload={"title": "Fake Title"},
         )
 
 
@@ -52,7 +57,9 @@ class TestBookSourceAdapter:
         class IncompleteAdapter(BookSourceAdapter):
             name = "incomplete"
 
-            async def search(self, query: str) -> list[ExternalBookHit]:
+            async def search(
+                self, query: str, session: AsyncSession
+            ) -> list[ExternalSourceRecord]:
                 return []
 
         with pytest.raises(TypeError):
@@ -60,27 +67,29 @@ class TestBookSourceAdapter:
 
 
 class TestFakeAdapter:
-    async def test_search_returns_hits(self):
+    async def test_search_persists_and_returns_records(self, session: AsyncSession):
         adapter = FakeAdapter()
-        hits = await adapter.search("dune")
+        records = await adapter.search("dune", session)
 
-        assert len(hits) == 1
-        assert hits[0].title == "Result for dune"
-        assert hits[0].raw == {"source_id": "abc123"}
+        assert len(records) == 1
+        assert records[0].source == "fake"
+        assert records[0].ref_kind == ExternalRefKind.search
+        assert records[0].ref == "dune"
+        assert records[0].payload == {"title": "Result for dune"}
 
-    async def test_get_by_isbn_returns_detail(self):
+    async def test_get_by_isbn_persists_and_returns_record(self, session: AsyncSession):
         adapter = FakeAdapter()
-        detail = await adapter.get_by_isbn("9780134685991")
+        record = await adapter.get_by_isbn("9780134685991", session)
 
-        assert detail is not None
-        assert detail.title == "Fake Title"
-        assert detail.publisher == "Fake Press"
+        assert record is not None
+        assert record.ref_kind == ExternalRefKind.isbn
+        assert record.payload == {"title": "Fake Title"}
 
-    async def test_get_by_isbn_returns_none_for_unknown(self):
+    async def test_get_by_isbn_returns_none_for_unknown(self, session: AsyncSession):
         adapter = FakeAdapter()
-        detail = await adapter.get_by_isbn("0000000000000")
+        record = await adapter.get_by_isbn("0000000000000", session)
 
-        assert detail is None
+        assert record is None
 
 
 class TestRegistry:

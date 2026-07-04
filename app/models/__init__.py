@@ -11,6 +11,7 @@ from app.models.catalog import (
     ReleaseFormat,
 )
 from app.models.collection import Collection, CollectionItem
+from app.models.external_source import ExternalRefKind, ExternalSourceRecord
 from app.models.mixins import IdMixin, TimestampMixin
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
@@ -25,6 +26,8 @@ __all__ = [
     "CollectionItem",
     "Contributor",
     "ContributorRole",
+    "ExternalRefKind",
+    "ExternalSourceRecord",
     "ISBNKind",
     "IdMixin",
     "RefreshToken",
