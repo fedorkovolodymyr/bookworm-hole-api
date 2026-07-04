@@ -3,13 +3,6 @@ import pytest
 from app.core.config import AuthSettings, Settings, get_settings
 
 
-@pytest.fixture(autouse=True)
-def _clear_settings_cache():
-    get_settings.cache_clear()
-    yield
-    get_settings.cache_clear()
-
-
 def test_get_settings_is_cached():
     assert get_settings() is get_settings()
 

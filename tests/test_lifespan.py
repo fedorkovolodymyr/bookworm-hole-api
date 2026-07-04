@@ -6,13 +6,6 @@ from app.core.config import get_settings
 from app.core.lifespan import _init_sentry
 
 
-@pytest.fixture(autouse=True)
-def _clear_settings_cache():
-    get_settings.cache_clear()
-    yield
-    get_settings.cache_clear()
-
-
 class TestInitSentry:
     def test_skips_init_when_dsn_unset(self, monkeypatch: pytest.MonkeyPatch):
         mock_init = MagicMock()

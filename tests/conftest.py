@@ -1,7 +1,15 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.core.config import get_settings
 from app.main import app
+
+
+@pytest.fixture(autouse=True)
+def _clear_settings_cache():
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
 
 
 @pytest.fixture
