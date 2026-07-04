@@ -8,6 +8,22 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_USER: bookwormhole
+          POSTGRES_PASSWORD: secretpassword
+          POSTGRES_DB: bookwormhole
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U bookwormhole -d bookwormhole"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -23,6 +39,12 @@ jobs:
 
       - name: Install dependencies
         run: task install
+
+      - name: Configure environment
+        run: cp .env.example .env
+
+      - name: Apply migrations
+        run: task alembic-upgrade
 
       - name: Lint (ruff + pyright)
         run: task lint
