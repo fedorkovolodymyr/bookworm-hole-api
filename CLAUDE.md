@@ -4,6 +4,7 @@
 
 - `task format` — ruff import sort + format
 - `task lint` — ruff check + pyright (both must pass)
+- `task lint-format` — run format then lint in sequence
 - `task type-check` — pyright only
 - `task test` — pytest (asyncio_mode=auto), against an isolated `*_test` database auto-created/migrated at session start, with coverage report
 - `task test -- --collect-only` — verify pytest config loads
@@ -12,6 +13,7 @@
 - `task dev` — FastAPI local with hot-reload (needs services running)
 - `task alembic-revision -- "message"` — create migration
 - `task alembic-upgrade` — apply migrations to head
+- `task alembic-downgrade` — rollback last migration
 - `task up` / `task down` — start/stop full stack via docker compose
 - `task shell` — shell into the running api container
 - `task test-container` / `task lint-container` / `task format-container` — same, run inside the api container
@@ -49,6 +51,7 @@ Key tasks:
 - `task docker-compose-stop` — stop without removing volumes
 - `task docker-compose-down` — stop + remove containers
 - `task docker-compose-postgres` — start only postgres
+- `task docker-compose-api` — start only api
 - `task docker-compose-logs` — follow logs
 
 ### Option C — Full Docker (production-like)
