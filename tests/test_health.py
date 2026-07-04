@@ -37,3 +37,5 @@ async def test_health_check_response_shape(client: AsyncClient):
     assert "checks" in data
     assert "api" in data["checks"]
     assert "database" in data["checks"]
+    assert isinstance(data["version"], str)
+    assert data["version"] != ""

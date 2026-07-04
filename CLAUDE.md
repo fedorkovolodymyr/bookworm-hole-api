@@ -18,6 +18,8 @@
 - `task migrate` / `task migrate:new -- "message"` — Alembic, inside the api container
 - `task seed` / `task seed:test` — load dev / test fixture data
 - `task psql` — psql shell against the dev database
+- `task release-dry-run` — preview next version bump from commits since last tag, no changes made
+- `task release` — bump `pyproject.toml` version, tag, publish GitHub release (CI-only, see Release Flow)
 
 ## Dev Environments
 
@@ -102,6 +104,13 @@ app/
 - Never catch bare `except Exception`. Ruff enforces this via `flake8-blind-except` (`BLE` in `[tool.ruff.lint] extend-select`). Catch the narrowest exception type that can actually occur (e.g. `jwt.PyJWTError`, `httpx.HTTPError`, `sqlalchemy.exc.SQLAlchemyError`) and either re-raise as an `AppError` subclass or let it propagate.
 - The one sanctioned bare-except is `app/core/db.py::get_session`'s commit/rollback boundary — it must catch anything to roll back the transaction. No `# noqa` needed: ruff's `BLE001` doesn't flag `except Exception` blocks that end in a bare `raise` (pure re-raise, nothing swallowed).
 - At the adapter boundary (`app/services/external/`), catch the external library's specific exception (e.g. `httpx.HTTPError`) and re-raise as `ExternalServiceError` — callers in `services/` then don't need their own try/except around adapter calls.
+
+## Release Flow
+
+- Versioning is fully automated via `python-semantic-release` (`[tool.semantic_release]` in `pyproject.toml`), driven by Conventional Commit messages since the last tag — never hand-edit `version` in `pyproject.toml`.
+- Bump mapping: `fix:` → patch, `feat:` → minor, `BREAKING CHANGE:`/`!` → major (`major_on_zero = true`, so this applies even pre-1.0), `chore:`/`docs:`/`test:` → no bump.
+- The `release` job in `.github/workflows/ci.yml` runs manually (`workflow_dispatch`, gated to `main`), after the `ci` job (lint + test) passes. It bumps the version, creates a `vX.Y.Z` tag, and publishes a GitHub release with a changelog from commit messages.
+- `HealthService._get_version()` (`app/services/health_service.py`) resolves the running version via `importlib.metadata.version("bookworm-hole-api")`, falling back to `"unknown"` if package metadata isn't installed — never hardcode it.
 
 ## Error Tracking (Sentry)
 

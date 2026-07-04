@@ -56,6 +56,8 @@ Used inside the dev container or a local venv (see [CLAUDE.md](CLAUDE.md) for se
 - `task precommit-install` — install git pre-commit hooks (required first-time setup)
 - `task precommit` — run all pre-commit hooks against every file
 - `task alembic-revision -- "message"` / `task alembic-upgrade` — migrations via local uv
+- `task release-dry-run` — preview the next version bump without making changes
+- `task release` — bump version, tag, and publish a GitHub release (CI-only, see below)
 
 **⚠️ Important**: Always run migrations after pulling changes or before starting the app.
 
@@ -69,6 +71,12 @@ Used inside the dev container or a local venv (see [CLAUDE.md](CLAUDE.md) for se
 ### Environment configuration
 
 Copy `.env.example` to `.env` (single file, used both locally and by docker compose). `POSTGRES_HOST`/`REDIS_HOST` are overridden to `postgres`/`redis` automatically inside docker compose — no separate `.env.docker` needed.
+
+### Release flow
+
+Versioning is automated via `python-semantic-release`, driven entirely by Conventional Commit messages — never edit `version` in `pyproject.toml` by hand. Bump mapping: `fix:` → patch, `feat:` → minor, `BREAKING CHANGE:`/`!` → major, `chore:`/`docs:`/`test:` → no bump.
+
+The `release` job in `.github/workflows/ci.yml` is manually triggered (`workflow_dispatch`, `main` branch only) and runs after the `ci` job passes. It bumps `pyproject.toml`, creates a `vX.Y.Z` git tag, and publishes a GitHub release with a changelog from commit messages. Run `task release-dry-run` locally to preview the next version before triggering a release.
 
 ### Error tracking (Sentry)
 
