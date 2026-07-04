@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
 from app.core.deps import require_admin
+from app.models.catalog import Book
 from app.repositories.book_repository import BookRepository
 from app.repositories.contributor_repository import ContributorRepository
 from app.repositories.import_repository import ImportRepository
@@ -31,5 +32,5 @@ def get_import_service(
 async def import_book(
     body: ImportBookRequest,
     service: ImportService = Depends(get_import_service),
-):
+) -> Book:
     return await service.import_book(body.source, body.source_id)

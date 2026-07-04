@@ -36,7 +36,12 @@ class ImportService:
         except AdapterNotFoundError as exc:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
 
-        detail = await adapter.get_detail(source_id, self.session)
+        try:
+            detail = await adapter.get_detail(source_id, self.session)
+        except Exception as exc:
+            raise HTTPException(
+                status_code=502, detail="External source lookup failed"
+            ) from exc
         if detail is None:
             raise HTTPException(status_code=404, detail="Source book not found")
 
