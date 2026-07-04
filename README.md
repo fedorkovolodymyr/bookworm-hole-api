@@ -51,11 +51,13 @@ Used inside the dev container or a local venv (see [CLAUDE.md](CLAUDE.md) for se
 - `task dev` — run FastAPI locally with `--reload`
 - `task format` — ruff import sort + format
 - `task lint` — ruff check + pyright
+- `task lint-format` — run format then lint in sequence
 - `task type-check` — pyright only
 - `task test` — pytest, against an isolated `*_test` database (auto-created/migrated), with coverage report
 - `task precommit-install` — install git pre-commit hooks (required first-time setup)
 - `task precommit` — run all pre-commit hooks against every file
 - `task alembic-revision -- "message"` / `task alembic-upgrade` — migrations via local uv
+- `task alembic-downgrade` — rollback last migration
 - `task release-dry-run` — preview the next version bump without making changes
 - `task release` — bump version, tag, and publish a GitHub release (CI-only, see below)
 
@@ -64,6 +66,7 @@ Used inside the dev container or a local venv (see [CLAUDE.md](CLAUDE.md) for se
 ### Docker compose (services only)
 
 - postgres only: `task docker-compose-postgres`
+- api only: `task docker-compose-api`
 - all services: `task docker-compose-up`
 - stop: `task docker-compose-stop` / down: `task docker-compose-down`
 - logs: `task docker-compose-logs` (live, with `-f`)
