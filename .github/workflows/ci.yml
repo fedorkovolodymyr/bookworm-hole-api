@@ -41,7 +41,12 @@ jobs:
         run: task install
 
       - name: Configure environment
-        run: cp .env.example .env
+        run: |
+          printf 'POSTGRES_HOST=localhost\n' >> .env
+          printf 'POSTGRES_USER=bookwormhole\n' >> .env
+          printf 'POSTGRES_PASSWORD=secretpassword\n' >> .env
+          printf 'POSTGRES_DB=bookwormhole\n' >> .env
+          printf 'POSTGRES_PORT=5432\n' >> .env
 
       - name: Apply migrations
         run: task alembic-upgrade
