@@ -1,8 +1,9 @@
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.config import Settings, get_settings
+from app.core.errors import AppError
 from app.core.lifespan import lifespan
 from app.routers import api_v1
 
@@ -17,6 +18,11 @@ app.add_middleware(
 )
 
 app.include_router(api_v1)
+
+
+@app.exception_handler(AppError)
+async def app_error_handler(_request: Request, exc: AppError) -> JSONResponse:
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
 @app.get("/health", include_in_schema=False)

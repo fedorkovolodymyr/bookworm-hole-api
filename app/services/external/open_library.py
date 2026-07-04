@@ -5,6 +5,7 @@ import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.errors import ErrorMessages, ExternalServiceError
 from app.models.catalog import ISBNKind, ReleaseFormat
 from app.models.external_source import ExternalRefKind, ExternalSourceRecord
 from app.repositories.external_source_repository import ExternalSourceRepository
@@ -97,8 +98,13 @@ class OpenLibraryAdapter(BookSourceAdapter):
         self, query: str, session: AsyncSession
     ) -> list[ExternalSourceRecord]:
         async with self._build_client() as client:
-            response = await client.get("/search.json", params={"q": query})
-            response.raise_for_status()
+            try:
+                response = await client.get("/search.json", params={"q": query})
+                response.raise_for_status()
+            except httpx.HTTPError as exc:
+                raise ExternalServiceError(
+                    ErrorMessages.EXTERNAL_LOOKUP_FAILED
+                ) from exc
             docs = response.json().get("docs", [])
 
         repo = ExternalSourceRepository(session)
@@ -116,10 +122,15 @@ class OpenLibraryAdapter(BookSourceAdapter):
         self, isbn: str, session: AsyncSession
     ) -> ExternalSourceRecord | None:
         async with self._build_client() as client:
-            response = await client.get(f"/isbn/{isbn}.json")
-            if response.status_code == httpx.codes.NOT_FOUND:
-                return None
-            response.raise_for_status()
+            try:
+                response = await client.get(f"/isbn/{isbn}.json")
+                if response.status_code == httpx.codes.NOT_FOUND:
+                    return None
+                response.raise_for_status()
+            except httpx.HTTPError as exc:
+                raise ExternalServiceError(
+                    ErrorMessages.EXTERNAL_LOOKUP_FAILED
+                ) from exc
             isbn_doc = response.json()
 
             work_doc: dict[str, object] = {}

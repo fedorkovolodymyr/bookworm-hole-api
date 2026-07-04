@@ -63,6 +63,14 @@ DB queries in repositories only. Business logic in services only.
 ## Models
 - Models with bidirectional `Relationship()`/`back_populates` pairs go in one shared file (e.g. `app/models/catalog.py`), not split one-class-per-file. Splitting forces circular imports resolved via `if TYPE_CHECKING:` + string forward refs — avoid that pattern here. Models with no cross-relationships (e.g. `user.py`, `refresh_token.py`) still get their own file.
 
+## Error Handling
+- Domain errors live in `app/core/errors.py`: `AppError` (base, `status_code = 500`) and subclasses `NotFoundError` (404), `ConflictError` (409), `UnauthorizedError` (401), `ExternalServiceError` (502). Each takes a `detail: str` message.
+- Services raise these directly (`raise NotFoundError("...")`) instead of `raise HTTPException(...)` or wrapping calls in `try/except Exception`. A single handler in `app/main.py` (`@app.exception_handler(AppError)`) translates any `AppError` to a JSON response — no per-service try/except needed to get an HTTP response.
+- Recurring error message strings go in `ErrorMessages` (`app/core/errors.py`), not inline literals, so they aren't duplicated across call sites.
+- Never catch bare `except Exception`. Ruff enforces this via `flake8-blind-except` (`BLE` in `[tool.ruff.lint] extend-select`). Catch the narrowest exception type that can actually occur (e.g. `jwt.PyJWTError`, `httpx.HTTPError`, `sqlalchemy.exc.SQLAlchemyError`) and either re-raise as an `AppError` subclass or let it propagate.
+- The one sanctioned bare-except is `app/core/db.py::get_session`'s commit/rollback boundary — it must catch anything to roll back the transaction, so it carries an explicit `# noqa: BLE001` with a comment explaining why.
+- At the adapter boundary (`app/services/external/`), catch the external library's specific exception (e.g. `httpx.HTTPError`) and re-raise as `ExternalServiceError` — callers in `services/` then don't need their own try/except around adapter calls.
+
 ## Gotchas
 - pyright `include = ["app", "scripts"]` required — omitting causes .venv scan (8600 errors)
 - SQLModel needs `reportIncompatibleVariableOverride = "none"` + `reportAssignmentType = "none"`

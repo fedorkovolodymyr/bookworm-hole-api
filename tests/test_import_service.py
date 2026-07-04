@@ -1,10 +1,10 @@
 import pytest
-from fastapi import HTTPException
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, delete, select
 
 from app.core.db import get_session
+from app.core.errors import NotFoundError
 from app.models.catalog import (
     ISBN,
     Book,
@@ -248,11 +248,11 @@ class TestImportBook:
         assert second.contributors[0].id == first_contributor_id
 
     async def test_unknown_source_raises_404(self, import_service: ImportService):
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(NotFoundError) as exc_info:
             await import_service.import_book("does-not-exist", "irrelevant")
         assert exc_info.value.status_code == 404
 
     async def test_missing_source_book_raises_404(self, import_service: ImportService):
-        with pytest.raises(HTTPException) as exc_info:
+        with pytest.raises(NotFoundError) as exc_info:
             await import_service.import_book("stub", "unknown-id")
         assert exc_info.value.status_code == 404
