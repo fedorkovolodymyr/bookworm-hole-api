@@ -58,7 +58,7 @@ DB queries in repositories only. Business logic in services only.
 - `app/models/mixins.py` — IdMixin, TimestampMixin (use for all models)
 - `app/models/catalog.py` — Book, Release, Contributor + join tables (bidirectional relationships, see Models rule below)
 - `app/core/db.py` — get_session() DI dependency
-- `app/core/config.py` — Settings class (api_settings, postgres_settings, auth_settings, app_settings); import as `from app.core.config import settings`, or inject via `Depends(get_settings)` (`@lru_cache`-backed)
+- `app/core/config.py` — Settings class (api_settings, postgres_settings, auth_settings, app_settings, sentry_settings); import as `from app.core.config import settings`, or inject via `Depends(get_settings)` (`@lru_cache`-backed)
 
 ## Models
 - Models with bidirectional `Relationship()`/`back_populates` pairs go in one shared file (e.g. `app/models/catalog.py`), not split one-class-per-file. Splitting forces circular imports resolved via `if TYPE_CHECKING:` + string forward refs — avoid that pattern here. Models with no cross-relationships (e.g. `user.py`, `refresh_token.py`) still get their own file.
@@ -70,6 +70,11 @@ DB queries in repositories only. Business logic in services only.
 - Never catch bare `except Exception`. Ruff enforces this via `flake8-blind-except` (`BLE` in `[tool.ruff.lint] extend-select`). Catch the narrowest exception type that can actually occur (e.g. `jwt.PyJWTError`, `httpx.HTTPError`, `sqlalchemy.exc.SQLAlchemyError`) and either re-raise as an `AppError` subclass or let it propagate.
 - The one sanctioned bare-except is `app/core/db.py::get_session`'s commit/rollback boundary — it must catch anything to roll back the transaction. No `# noqa` needed: ruff's `BLE001` doesn't flag `except Exception` blocks that end in a bare `raise` (pure re-raise, nothing swallowed).
 - At the adapter boundary (`app/services/external/`), catch the external library's specific exception (e.g. `httpx.HTTPError`) and re-raise as `ExternalServiceError` — callers in `services/` then don't need their own try/except around adapter calls.
+
+## Error Tracking (Sentry)
+- `SentrySettings` (`app/core/config.py`, `env_prefix="SENTRY_"`): `dsn`, `traces_sample_rate`, `profiles_sample_rate`. `dsn` unset (default) → Sentry stays disabled, no-op, no external calls — safe default for local dev/test.
+- `sentry_sdk.init(...)` is called from `app/core/lifespan.py` startup, guarded by `if sentry_settings.dsn`. `send_default_pii` is always `False` — never send emails/tokens/PII to Sentry.
+- To enable locally: set `SENTRY_DSN` in `.env` (see `.env.example`).
 
 ## Gotchas
 - pyright `include = ["app", "scripts"]` required — omitting causes .venv scan (8600 errors)
