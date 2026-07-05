@@ -48,3 +48,4 @@ class ErrorMessages:
     FRIEND_REQUEST_NOT_FOUND = "Friend request not found"
     USER_BLOCKED = "This action is not allowed"
     CANNOT_BLOCK_SELF = "You cannot block yourself"
+    CONTRIBUTOR_NOT_FOUND = "Contributor not found"
