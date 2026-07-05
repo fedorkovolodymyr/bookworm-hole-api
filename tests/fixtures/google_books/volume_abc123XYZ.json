@@ -1,0 +1,36 @@
+{
+  "kind": "books#volume",
+  "id": "abc123XYZ",
+  "volumeInfo": {
+    "title": "Dune",
+    "authors": [
+      "Frank Herbert"
+    ],
+    "publisher": "Ace Books",
+    "publishedDate": "1965-06-01",
+    "description": "Set on the desert planet Arrakis, Dune is the story of the boy Paul Atreides.",
+    "industryIdentifiers": [
+      {
+        "type": "ISBN_13",
+        "identifier": "9780441013593"
+      },
+      {
+        "type": "ISBN_10",
+        "identifier": "0441013597"
+      }
+    ],
+    "language": "en",
+    "imageLinks": {
+      "smallThumbnail": "http://books.google.com/books/content?id=abc123XYZ&img=1&zoom=5",
+      "thumbnail": "http://books.google.com/books/content?id=abc123XYZ&img=1&zoom=1"
+    }
+  },
+  "accessInfo": {
+    "epub": {
+      "isAvailable": true
+    },
+    "pdf": {
+      "isAvailable": false
+    }
+  }
+}
