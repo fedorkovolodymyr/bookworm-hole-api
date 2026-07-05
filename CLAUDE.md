@@ -113,7 +113,7 @@ app/
 - Versioning is fully automated via `python-semantic-release` (`[tool.semantic_release]` in `pyproject.toml`), driven by Conventional Commit messages since the last tag — never hand-edit `version` in `pyproject.toml`.
 - Bump mapping: `fix:` → patch, `feat:` → minor, `BREAKING CHANGE:`/`!` → major (`major_on_zero = true`, so this applies even pre-1.0), `chore:`/`docs:`/`test:` → no bump.
 - The `release` job in `.github/workflows/ci.yml` runs manually (`workflow_dispatch`, gated to `main`), after the `ci` job (lint + test) passes. It bumps the version, creates a `vX.Y.Z` tag, and publishes a GitHub release with a changelog from commit messages.
-- `HealthService._get_version()` (`app/services/health_service.py`) resolves the running version via `importlib.metadata.version("bookworm-hole-api")`, falling back to `"unknown"` if package metadata isn't installed — never hardcode it.
+- `HealthService.get_version()` (`app/services/health_service.py`) resolves the running version via `importlib.metadata.version("bookworm-hole-api")`, falling back to `"unknown"` if package metadata isn't installed — never hardcode it. Used by `check_overall()` and by `GET /health/version`.
 
 ## Error Tracking (Sentry)
 
