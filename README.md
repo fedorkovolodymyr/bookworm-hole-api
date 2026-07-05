@@ -41,6 +41,7 @@ Run against the containers started by `task up` (uses `docker compose exec`, so 
 - `task seed` — load dev seed data
 - `task seed:test` — load fixtures into the test database (`bookwormhole_test`)
 - `task psql` — open a psql shell against the dev database
+- `task refresh-metadata` — manually refresh stale release metadata from external sources
 - `task down` — stop and remove the stack
 
 ### Local (uv-based) tasks

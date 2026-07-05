@@ -16,6 +16,7 @@ def test_release_table_columns():
         "duration_minutes",
         "cover_image_url",
         "description_override",
+        "last_external_sync_at",
         "created_at",
         "updated_at",
     }
@@ -25,6 +26,7 @@ def test_release_table_columns():
     assert columns["page_count"].nullable
     assert columns["duration_minutes"].nullable
     assert columns["description_override"].nullable
+    assert columns["last_external_sync_at"].nullable
 
 
 def test_release_book_relationship():

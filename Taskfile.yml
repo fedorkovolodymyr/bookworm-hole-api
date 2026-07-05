@@ -209,3 +209,8 @@ tasks:
     desc: Open an interactive psql shell against the dev Postgres container
     dotenv: [".env"]
     cmd: "{{.DC}} exec postgres psql -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
+
+  refresh-metadata:
+    desc: 'Manually refresh stale release metadata from external sources (e.g., task refresh-metadata -- --older-than-days 14)'
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api uv run python -m scripts.refresh_metadata {{.CLI_ARGS}}"
