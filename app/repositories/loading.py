@@ -5,7 +5,7 @@ from sqlalchemy.orm.interfaces import LoaderOption
 
 
 def eager(attr: Any) -> LoaderOption:
-    # Any param sidesteps SQLModel relationship fields' pyright/selectinload type mismatch.
+    # Any param sidesteps pyright/selectinload type mismatch on SQLModel fields.
     return selectinload(attr)
 
 

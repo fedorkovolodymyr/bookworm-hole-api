@@ -8,7 +8,9 @@ DEV_CONTRIBUTORS: list[dict[str, Any]] = [
         "full_name": "Ada Lovelace",
         "sort_name": "Lovelace, Ada",
         "slug": "ada-lovelace",
-        "bio": "Mathematician and writer, known for work on Babbage's Analytical Engine.",
+        "bio": (
+            "Mathematician and writer, known for work on Babbage's Analytical Engine."
+        ),
     },
     {
         "full_name": "Jorge Luis Borges",

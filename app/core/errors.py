@@ -1,5 +1,8 @@
 class AppError(Exception):
-    """Base for domain errors translated to HTTP responses by app.main's exception handler."""
+    """Base for domain errors.
+
+    Translated to HTTP responses by app.main's exception handler.
+    """
 
     status_code: int = 500
 
