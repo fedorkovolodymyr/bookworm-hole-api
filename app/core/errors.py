@@ -36,3 +36,5 @@ class ErrorMessages:
     REORDER_INVALID_ITEM_IDS = (
         "item_ids must match the collection's existing items exactly"
     )
+    REVIEW_NOT_FOUND = "Review not found"
+    REVIEW_ALREADY_EXISTS = "You already reviewed this book or release"
