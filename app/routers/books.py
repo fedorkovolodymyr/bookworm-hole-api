@@ -22,7 +22,7 @@ books_router = APIRouter(prefix="/books", tags=["books"])
 
 
 def get_book_service(session: AsyncSession = Depends(get_session)) -> BookService:
-    return BookService(BookRepository(session))
+    return BookService(BookRepository(session), ReviewRepository(session))
 
 
 def get_review_service(

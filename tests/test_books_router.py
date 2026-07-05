@@ -1,11 +1,21 @@
+from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.deps import get_current_user
+from app.main import app
 from app.models.catalog import ISBN, ISBNKind, Release, ReleaseFormat
 from app.models.catalog import Book as BookModel
+from app.models.review import Review
+from app.models.user import User
+
+
+def _login_as(user: User) -> None:
+    app.dependency_overrides[get_current_user] = lambda: user
+
 
 BookWithReleases = tuple[BookModel, ISBN, ISBN]
 
@@ -263,3 +273,176 @@ async def test_delete_book_allowed_for_admin(
 
     response = await admin_client.delete(f"/api/v1/books/{book.id}")
     assert response.status_code == 204
+
+
+@pytest.fixture
+async def user(db_session: AsyncSession) -> AsyncIterator[User]:
+    user = User(email="user@example.com", username="user", display_name="User")
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    _login_as(user)
+    yield user
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+class TestRatingAggregates:
+    async def test_book_rating_aggregates_with_mixed_reviews(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+        user: User,
+    ):
+        book = BookModel(title="Test Book", description="Test description")
+        db_session.add(book)
+        await db_session.flush()
+
+        release1 = Release(
+            book_id=book.id,
+            format=ReleaseFormat.hardcover,
+            publisher="Publisher 1",
+            language="en",
+        )
+        release2 = Release(
+            book_id=book.id,
+            format=ReleaseFormat.paperback,
+            publisher="Publisher 2",
+            language="en",
+        )
+        db_session.add(release1)
+        db_session.add(release2)
+        await db_session.flush()
+
+        book_review = Review(user_id=user.id, book_id=book.id, rating=5, is_public=True)
+        release1_review = Review(
+            user_id=user.id, release_id=release1.id, rating=4, is_public=True
+        )
+        release2_review = Review(
+            user_id=user.id, release_id=release2.id, rating=3, is_public=True
+        )
+        private_review = Review(
+            user_id=user.id, book_id=book.id, rating=1, is_public=False
+        )
+        db_session.add_all(
+            [book_review, release1_review, release2_review, private_review]
+        )
+        await db_session.commit()
+
+        response = await async_client.get(f"/api/v1/books/{book.id}")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["average_rating"] == 4.0
+        assert data["rating_count"] == 3
+
+    async def test_book_rating_aggregates_no_reviews(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+    ):
+        book = BookModel(title="Unreviewed Book", description="No reviews yet")
+        db_session.add(book)
+        await db_session.commit()
+
+        response = await async_client.get(f"/api/v1/books/{book.id}")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["average_rating"] is None
+        assert data["rating_count"] == 0
+
+    async def test_release_rating_aggregates(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+        user: User,
+    ):
+        book = BookModel(title="Test Book", description="Test description")
+        db_session.add(book)
+        await db_session.flush()
+
+        release = Release(
+            book_id=book.id,
+            format=ReleaseFormat.hardcover,
+            publisher="Publisher",
+            language="en",
+        )
+        db_session.add(release)
+        await db_session.flush()
+
+        review1 = Review(
+            user_id=user.id, release_id=release.id, rating=5, is_public=True
+        )
+        review2 = Review(
+            user_id=user.id,
+            release_id=release.id,
+            rating=3,
+            is_public=True,
+        )
+        db_session.add_all([review1, review2])
+        await db_session.commit()
+
+        response = await async_client.get(f"/api/v1/releases/{release.id}")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["average_rating"] == 4.0
+        assert data["rating_count"] == 2
+
+    async def test_release_rating_aggregates_excludes_book_reviews(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+        user: User,
+    ):
+        book = BookModel(title="Test Book", description="Test description")
+        db_session.add(book)
+        await db_session.flush()
+
+        release = Release(
+            book_id=book.id,
+            format=ReleaseFormat.hardcover,
+            publisher="Publisher",
+            language="en",
+        )
+        db_session.add(release)
+        await db_session.flush()
+
+        book_review = Review(user_id=user.id, book_id=book.id, rating=5, is_public=True)
+        release_review = Review(
+            user_id=user.id, release_id=release.id, rating=3, is_public=True
+        )
+        db_session.add_all([book_review, release_review])
+        await db_session.commit()
+
+        response = await async_client.get(f"/api/v1/releases/{release.id}")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["average_rating"] == 3.0
+        assert data["rating_count"] == 1
+
+    async def test_release_rating_aggregates_no_reviews(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+    ):
+        book = BookModel(title="Test Book", description="Test description")
+        db_session.add(book)
+        await db_session.flush()
+
+        release = Release(
+            book_id=book.id,
+            format=ReleaseFormat.hardcover,
+            publisher="Publisher",
+            language="en",
+        )
+        db_session.add(release)
+        await db_session.commit()
+
+        response = await async_client.get(f"/api/v1/releases/{release.id}")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["average_rating"] is None
+        assert data["rating_count"] == 0

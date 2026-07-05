@@ -2,10 +2,12 @@ from collections.abc import Sequence
 from typing import Literal
 from uuid import UUID
 
-from sqlalchemy import func
+from sqlalchemy import and_, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import ColumnElement
 from sqlmodel import col, select
 
+from app.models.catalog import Release
 from app.models.review import Review
 from app.schemas.review_schemas import UpdateReviewSchema
 
@@ -111,3 +113,45 @@ class ReviewRepository:
         )
         result = await self.session.execute(query.offset(skip).limit(limit))
         return result.scalars().all(), total
+
+    async def get_rating_aggregate_for_book(
+        self, book_id: UUID
+    ) -> tuple[float | None, int]:
+        release_ids_query = select(Release.id).where(col(Release.book_id) == book_id)
+        release_ids_result = await self.session.execute(release_ids_query)
+        release_ids: list[UUID] = [row[0] for row in release_ids_result.all()]
+
+        conditions: list[ColumnElement[bool]] = [
+            col(Review.is_public).is_(True),
+            col(Review.book_id) == book_id,
+        ]
+        if release_ids:
+            conditions.append(col(Review.release_id).in_(release_ids))
+
+        subquery = select(Review.id).where(or_(*conditions)).subquery()
+        query = select(func.avg(Review.rating), func.count()).select_from(subquery)
+        result = await self.session.execute(query)
+        row = result.first()
+        avg_rating: float | None = row[0] if row else None
+        count: int = row[1] if row else 0
+        return avg_rating, count or 0
+
+    async def get_rating_aggregate_for_release(
+        self, release_id: UUID
+    ) -> tuple[float | None, int]:
+        subquery = (
+            select(Review.id)
+            .where(
+                and_(
+                    col(Review.release_id) == release_id,
+                    col(Review.is_public).is_(True),
+                )
+            )
+            .subquery()
+        )
+        query = select(func.avg(Review.rating), func.count()).select_from(subquery)
+        result = await self.session.execute(query)
+        row = result.first()
+        avg_rating: float | None = row[0] if row else None
+        count: int = row[1] if row else 0
+        return avg_rating, count or 0
