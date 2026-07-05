@@ -14,6 +14,7 @@ from app.models.collection import Collection, CollectionItem
 from app.models.external_source import ExternalRefKind, ExternalSourceRecord
 from app.models.mixins import IdMixin, TimestampMixin
 from app.models.refresh_token import RefreshToken
+from app.models.review import Review
 from app.models.user import User
 
 __all__ = [
@@ -34,6 +35,7 @@ __all__ = [
     "Release",
     "ReleaseContributor",
     "ReleaseFormat",
+    "Review",
     "TimestampMixin",
     "User",
 ]

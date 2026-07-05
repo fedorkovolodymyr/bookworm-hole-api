@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_session
 from app.core.deps import require_admin
 from app.repositories.book_repository import BookRepository
+from app.repositories.review_repository import ReviewRepository, ReviewSort
 from app.schemas.book_schemas import (
     BookResponse,
     BookWithReleasesResponse,
@@ -13,13 +14,21 @@ from app.schemas.book_schemas import (
     UpdateBookSchema,
 )
 from app.schemas.common_schemas import Page
+from app.schemas.review_schemas import ReviewResponse
 from app.services.book_service import BookService
+from app.services.review_service import ReviewService
 
 books_router = APIRouter(prefix="/books", tags=["books"])
 
 
 def get_book_service(session: AsyncSession = Depends(get_session)) -> BookService:
     return BookService(BookRepository(session))
+
+
+def get_review_service(
+    session: AsyncSession = Depends(get_session),
+) -> ReviewService:
+    return ReviewService(ReviewRepository(session))
 
 
 @books_router.get("/", response_model=Page[BookResponse])
@@ -86,3 +95,14 @@ async def delete_book(
     service: BookService = Depends(get_book_service),
 ) -> None:
     await service.delete_book(book_id)
+
+
+@books_router.get("/{book_id}/reviews", response_model=Page[ReviewResponse])
+async def retrieve_book_reviews(
+    book_id: UUID,
+    sort: ReviewSort = "created_at",
+    skip: int = 0,
+    limit: int = 10,
+    service: ReviewService = Depends(get_review_service),
+):
+    return await service.list_for_book(book_id, sort, skip, limit)
