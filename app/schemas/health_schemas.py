@@ -18,3 +18,11 @@ class HealthCheckResponse(BaseModel):
     status: HealthCheckStatus
     checks: dict[str, ServiceHealth]
     version: str
+
+
+class StatusResponse(BaseModel):
+    status: str
+
+
+class VersionResponse(BaseModel):
+    version: str

@@ -1,3 +1,4 @@
+import asyncio
 from importlib.metadata import PackageNotFoundError, version
 
 from loguru import logger
@@ -5,6 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.errors import ServiceUnavailableError
 from app.schemas.health_schemas import (
     HealthCheckResponse,
     HealthCheckStatus,
@@ -13,6 +15,22 @@ from app.schemas.health_schemas import (
 
 
 class HealthService:
+    DB_CHECK_TIMEOUT_SECONDS = 5.0
+
+    async def check_live(self) -> dict[str, str]:
+        """Always returns ok, used for liveness probes."""
+        return {"status": "ok"}
+
+    async def check_ready(self, session: AsyncSession) -> None:
+        """Checks if database is reachable, raises ServiceUnavailableError if not."""
+        try:
+            await asyncio.wait_for(
+                session.execute(text("SELECT 1")), timeout=self.DB_CHECK_TIMEOUT_SECONDS
+            )
+        except (SQLAlchemyError, TimeoutError) as e:
+            logger.error(f"Database readiness check failed: {e}")
+            raise ServiceUnavailableError("Database is not ready") from e
+
     async def check_api(self) -> ServiceHealth:
         logger.debug("Performing API health check")
         return ServiceHealth(status=HealthCheckStatus.HEALTHY, message="API is running")
@@ -53,10 +71,10 @@ class HealthService:
                 "api": api_health,
                 "database": db_health,
             },
-            version=self._get_version(),
+            version=self.get_version(),
         )
 
-    def _get_version(self) -> str:
+    def get_version(self) -> str:
         try:
             return version("bookworm-hole-api")
         except PackageNotFoundError:

@@ -28,6 +28,10 @@ class BadRequestError(AppError):
     status_code = 400
 
 
+class ServiceUnavailableError(AppError):
+    status_code = 503
+
+
 class ErrorMessages:
     SOURCE_BOOK_NOT_FOUND = "Source book not found"
     EXTERNAL_LOOKUP_FAILED = "External source lookup failed"
