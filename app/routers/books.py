@@ -7,6 +7,7 @@ from app.core.db import get_session
 from app.core.deps import require_admin
 from app.repositories.book_repository import BookRepository
 from app.repositories.review_repository import ReviewRepository, ReviewSort
+from app.routers.responses import ADMIN_RESPONSES, CONFLICT_RESPONSE, NOT_FOUND_RESPONSE
 from app.schemas.book_schemas import (
     BookResponse,
     BookWithReleasesResponse,
@@ -95,6 +96,25 @@ async def delete_book(
     service: BookService = Depends(get_book_service),
 ) -> None:
     await service.delete_book(book_id)
+
+
+@books_router.post(
+    "/{source_id}/merge-into/{target_id}",
+    response_model=BookWithReleasesResponse,
+    dependencies=[Depends(require_admin)],
+    responses=ADMIN_RESPONSES | NOT_FOUND_RESPONSE | CONFLICT_RESPONSE,
+    summary="Merge a duplicate book into another",
+)
+async def merge_book(
+    source_id: UUID,
+    target_id: UUID,
+    service: BookService = Depends(get_book_service),
+):
+    """Reassign all releases, reviews, statuses, and collection items from
+    `source_id` to `target_id`, then delete `source_id`. Atomic — a failure
+    rolls back the whole merge.
+    """
+    return await service.merge_books(source_id, target_id)
 
 
 @books_router.get("/{book_id}/reviews", response_model=Page[ReviewResponse])
