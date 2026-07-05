@@ -12,7 +12,11 @@ REQUEST_ID_HEADER = "X-Request-ID"
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    """Assigns a request ID (from the incoming header or generated) and logs each request."""
+    """Assign request ID and log each request.
+
+    Assigns a request ID from the incoming header or generates one, then logs
+    the request.
+    """
 
     async def dispatch(
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
