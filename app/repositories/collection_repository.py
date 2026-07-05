@@ -36,6 +36,21 @@ class CollectionRepository:
         result = await self.session.execute(query.offset(skip).limit(limit))
         return result.scalars().all(), total
 
+    async def get_public_for_user(
+        self, user_id: UUID, skip: int = 0, limit: int = 10
+    ) -> tuple[Sequence[Collection], int]:
+        filters = [
+            col(Collection.user_id) == user_id,
+            col(Collection.is_public).is_(True),
+        ]
+        query = select(Collection).where(*filters)
+        count_query = select(func.count()).select_from(
+            select(Collection.id).where(*filters).subquery()
+        )
+        total = (await self.session.execute(count_query)).scalar_one()
+        result = await self.session.execute(query.offset(skip).limit(limit))
+        return result.scalars().all(), total
+
     async def update(
         self, collection_id: UUID, data: UpdateCollectionSchema
     ) -> Collection | None:

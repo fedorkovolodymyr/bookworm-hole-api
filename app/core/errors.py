@@ -53,3 +53,4 @@ class ErrorMessages:
     USER_BLOCKED = "This action is not allowed"
     CANNOT_BLOCK_SELF = "You cannot block yourself"
     CONTRIBUTOR_NOT_FOUND = "Contributor not found"
+    INVALID_CURRENT_PASSWORD = "Current password is incorrect"
