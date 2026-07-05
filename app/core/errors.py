@@ -24,6 +24,15 @@ class ExternalServiceError(AppError):
     status_code = 502
 
 
+class BadRequestError(AppError):
+    status_code = 400
+
+
 class ErrorMessages:
     SOURCE_BOOK_NOT_FOUND = "Source book not found"
     EXTERNAL_LOOKUP_FAILED = "External source lookup failed"
+    COLLECTION_NOT_FOUND = "Collection not found"
+    COLLECTION_ITEM_NOT_FOUND = "Collection item not found"
+    REORDER_INVALID_ITEM_IDS = (
+        "item_ids must match the collection's existing items exactly"
+    )
