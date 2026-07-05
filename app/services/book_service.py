@@ -2,6 +2,7 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
+from app.core.errors import ConflictError, ErrorMessages, NotFoundError
 from app.models.catalog import Book
 from app.repositories.book_repository import BookRepository
 from app.schemas.book_schemas import CreateBookSchema, UpdateBookSchema
@@ -56,3 +57,11 @@ class BookService:
         deleted = await self.repository.delete(book_id)
         if not deleted:
             raise HTTPException(status_code=404, detail="Book not found")
+
+    async def merge_books(self, source_id: UUID, target_id: UUID) -> Book:
+        if source_id == target_id:
+            raise ConflictError(ErrorMessages.CANNOT_MERGE_BOOK_INTO_ITSELF)
+        merged = await self.repository.merge(source_id, target_id)
+        if not merged:
+            raise NotFoundError(ErrorMessages.BOOK_NOT_FOUND)
+        return merged

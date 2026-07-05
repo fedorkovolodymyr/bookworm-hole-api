@@ -1,11 +1,14 @@
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import ColumnElement, func
+from sqlalchemy import ColumnElement, delete, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
+from app.models.book_status import BookStatus
 from app.models.catalog import ISBN, Book, BookContributor, Contributor, Release
+from app.models.collection import CollectionItem
+from app.models.review import Review
 from app.repositories.loading import eager, eager_nested
 from app.schemas.book_schemas import UpdateBookSchema
 
@@ -103,3 +106,50 @@ class BookRepository:
         await self.session.delete(book)
         await self.session.commit()
         return True
+
+    async def merge(self, source_id: UUID, target_id: UUID) -> Book | None:
+        """Reassign everything pointing at ``source_id`` to ``target_id``, then
+        delete the source book. Runs as a single transaction: if any step fails,
+        the caller's session rollback (see ``get_session``) undoes all of it.
+        """
+        source = await self.session.get(Book, source_id)
+        target = await self.session.get(Book, target_id)
+        if source is None or target is None:
+            return None
+
+        await self.session.execute(
+            update(Release)
+            .where(col(Release.book_id) == source_id)
+            .values(book_id=target_id)
+        )
+
+        # Reviews are unique per (user, book); drop the source-side row where the
+        # user already reviewed the target book directly to avoid a conflict.
+        await self.session.execute(
+            delete(Review).where(
+                col(Review.book_id) == source_id,
+                col(Review.user_id).in_(
+                    select(Review.user_id).where(col(Review.book_id) == target_id)
+                ),
+            )
+        )
+        await self.session.execute(
+            update(Review)
+            .where(col(Review.book_id) == source_id)
+            .values(book_id=target_id)
+        )
+
+        await self.session.execute(
+            update(BookStatus)
+            .where(col(BookStatus.book_id) == source_id)
+            .values(book_id=target_id)
+        )
+        await self.session.execute(
+            update(CollectionItem)
+            .where(col(CollectionItem.book_id) == source_id)
+            .values(book_id=target_id)
+        )
+
+        await self.session.delete(source)
+        await self.session.commit()
+        return await self.get_by_id(target_id)

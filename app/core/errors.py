@@ -54,3 +54,5 @@ class ErrorMessages:
     CANNOT_BLOCK_SELF = "You cannot block yourself"
     CONTRIBUTOR_NOT_FOUND = "Contributor not found"
     INVALID_CURRENT_PASSWORD = "Current password is incorrect"
+    BOOK_NOT_FOUND = "Book not found"
+    CANNOT_MERGE_BOOK_INTO_ITSELF = "Cannot merge a book into itself"
