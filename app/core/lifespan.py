@@ -1,5 +1,3 @@
-import sys
-
 import sentry_sdk
 from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
@@ -7,6 +5,7 @@ from loguru import logger
 
 from app.core.config import get_settings
 from app.core.db import async_engine
+from app.core.logging import configure_logging
 
 
 def _init_sentry() -> None:
@@ -26,7 +25,7 @@ def _init_sentry() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    sink_id = logger.add(sys.stderr, level=get_settings().app_settings.log_level)
+    sink_id = configure_logging(get_settings().app_settings.log_level)
     _init_sentry()
     logger.info("Starting application...")
     yield
