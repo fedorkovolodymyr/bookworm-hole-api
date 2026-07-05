@@ -11,6 +11,7 @@ from app.models.catalog import (
     ReleaseFormat,
 )
 from app.models.collection import Collection, CollectionItem
+from app.models.contribution import Contribution, ContributionKind, ContributionStatus
 from app.models.external_source import ExternalRefKind, ExternalSourceRecord
 from app.models.friendship import Friendship, FriendshipStatus
 from app.models.mixins import IdMixin, TimestampMixin
@@ -27,6 +28,9 @@ __all__ = [
     "BookStatusKind",
     "Collection",
     "CollectionItem",
+    "Contribution",
+    "ContributionKind",
+    "ContributionStatus",
     "Contributor",
     "ContributorRole",
     "ExternalRefKind",
