@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
 from app.models.user import User
+from app.schemas.user_schemas import UpdateUserSchema
 
 
 class UserRepository:
@@ -30,3 +31,33 @@ class UserRepository:
             select(User).where(col(User.username) == username)
         )
         return result.scalars().first()
+
+    async def update(self, user_id: UUID, data: UpdateUserSchema) -> User | None:
+        user = await self.session.get(User, user_id)
+        if not user:
+            return None
+        user.sqlmodel_update(data.model_dump(exclude_unset=True))
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+    async def update_password(self, user_id: UUID, password_hash: str) -> User | None:
+        user = await self.session.get(User, user_id)
+        if not user:
+            return None
+        user.password_hash = password_hash
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+    async def deactivate(self, user_id: UUID) -> User | None:
+        user = await self.session.get(User, user_id)
+        if not user:
+            return None
+        user.is_active = False
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
