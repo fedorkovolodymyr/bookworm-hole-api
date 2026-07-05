@@ -5,7 +5,12 @@ from fastapi import HTTPException
 from app.models.catalog import Book
 from app.repositories.book_repository import BookRepository
 from app.repositories.review_repository import ReviewRepository
-from app.schemas.book_schemas import CreateBookSchema, UpdateBookSchema
+from app.schemas.book_schemas import (
+    BookWithReleasesResponse,
+    CreateBookSchema,
+    ReleaseWithISBNsResponse,
+    UpdateBookSchema,
+)
 from app.schemas.common_schemas import Page
 from app.services.isbn import normalize_isbn
 
@@ -21,7 +26,7 @@ class BookService:
         book = Book(**new_book.model_dump())
         return await self.repository.create(book)
 
-    async def retrieve_book_by_id(self, book_id: UUID) -> Book:
+    async def retrieve_book_by_id(self, book_id: UUID) -> BookWithReleasesResponse:
         book = await self.repository.get_by_id(book_id)
         if not book:
             raise HTTPException(status_code=404, detail="Book not found")
@@ -30,9 +35,8 @@ class BookService:
             avg_rating,
             rating_count,
         ) = await self.review_repository.get_rating_aggregate_for_book(book_id)
-        book.average_rating = avg_rating  # type: ignore[attr-defined]
-        book.rating_count = rating_count  # type: ignore[attr-defined]
 
+        releases: list[ReleaseWithISBNsResponse] = []
         for release in book.releases:
             (
                 rel_avg,
@@ -40,10 +44,19 @@ class BookService:
             ) = await self.review_repository.get_rating_aggregate_for_release(
                 release.id
             )
-            release.average_rating = rel_avg  # type: ignore[attr-defined]
-            release.rating_count = rel_count  # type: ignore[attr-defined]
+            releases.append(
+                ReleaseWithISBNsResponse.model_validate(release).model_copy(
+                    update={"average_rating": rel_avg, "rating_count": rel_count}
+                )
+            )
 
-        return book
+        return BookWithReleasesResponse.model_validate(book).model_copy(
+            update={
+                "average_rating": avg_rating,
+                "rating_count": rating_count,
+                "releases": releases,
+            }
+        )
 
     async def retrieve_book_by_isbn(self, raw_isbn: str) -> Book:
         try:

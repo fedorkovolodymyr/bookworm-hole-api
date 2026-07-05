@@ -286,12 +286,24 @@ async def user(db_session: AsyncSession) -> AsyncIterator[User]:
     app.dependency_overrides.pop(get_current_user, None)
 
 
+@pytest.fixture
+async def other_user(db_session: AsyncSession) -> User:
+    other_user = User(
+        email="other-user@example.com", username="other-user", display_name="Other"
+    )
+    db_session.add(other_user)
+    await db_session.commit()
+    await db_session.refresh(other_user)
+    return other_user
+
+
 class TestRatingAggregates:
     async def test_book_rating_aggregates_with_mixed_reviews(
         self,
         async_client: AsyncClient,
         db_session: AsyncSession,
         user: User,
+        other_user: User,
     ):
         book = BookModel(title="Test Book", description="Test description")
         db_session.add(book)
@@ -321,7 +333,7 @@ class TestRatingAggregates:
             user_id=user.id, release_id=release2.id, rating=3, is_public=True
         )
         private_review = Review(
-            user_id=user.id, book_id=book.id, rating=1, is_public=False
+            user_id=other_user.id, book_id=book.id, rating=1, is_public=False
         )
         db_session.add_all(
             [book_review, release1_review, release2_review, private_review]
@@ -356,6 +368,7 @@ class TestRatingAggregates:
         async_client: AsyncClient,
         db_session: AsyncSession,
         user: User,
+        other_user: User,
     ):
         book = BookModel(title="Test Book", description="Test description")
         db_session.add(book)
@@ -374,7 +387,7 @@ class TestRatingAggregates:
             user_id=user.id, release_id=release.id, rating=5, is_public=True
         )
         review2 = Review(
-            user_id=user.id,
+            user_id=other_user.id,
             release_id=release.id,
             rating=3,
             is_public=True,
