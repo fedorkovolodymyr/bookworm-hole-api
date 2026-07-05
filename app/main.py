@@ -5,10 +5,12 @@ from fastapi.responses import JSONResponse
 from app.core.config import Settings, get_settings
 from app.core.errors import AppError
 from app.core.lifespan import lifespan
+from app.core.middleware import RequestLoggingMiddleware
 from app.routers import api_v1
 
 app = FastAPI(lifespan=lifespan)
 
+app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_settings().app_settings.cors_origins,
