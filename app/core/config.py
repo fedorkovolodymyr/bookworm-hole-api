@@ -96,6 +96,21 @@ class OpenLibrarySettings(BaseSettings):
     )
 
 
+class GoogleBooksSettings(BaseSettings):
+    base_url: str = "https://www.googleapis.com/books/v1"
+    api_key: str | None = None
+    timeout_seconds: float = 5.0
+    retries: int = 2
+
+    model_config = SettingsConfigDict(
+        env_prefix="GOOGLE_BOOKS_",
+        case_sensitive=False,
+        extra="ignore",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+
 class SentrySettings(BaseSettings):
     dsn: str | None = None
     traces_sample_rate: float = 0.0
@@ -117,6 +132,7 @@ class Settings:
         self.auth_settings = AuthSettings()
         self.app_settings = AppSettings()
         self.open_library_settings = OpenLibrarySettings()
+        self.google_books_settings = GoogleBooksSettings()
         self.sentry_settings = SentrySettings()
 
         if (
@@ -131,6 +147,10 @@ class Settings:
     @property
     def database_url(self) -> str:
         return self.app_settings.database_url or self.postgres_settings.DB_URI
+
+    @property
+    def google_books_api_key(self) -> str | None:
+        return self.google_books_settings.api_key
 
 
 @lru_cache
