@@ -38,3 +38,13 @@ class ErrorMessages:
     )
     REVIEW_NOT_FOUND = "Review not found"
     REVIEW_ALREADY_EXISTS = "You already reviewed this book or release"
+    USER_NOT_FOUND = "User not found"
+    SELF_FRIEND_REQUEST_NOT_ALLOWED = "You cannot send a friend request to yourself"
+    FRIEND_REQUEST_ALREADY_EXISTS = (
+        "A friend request already exists between these users"
+    )
+    ALREADY_FRIENDS = "You are already friends with this user"
+    FRIENDSHIP_NOT_FOUND = "Friendship not found"
+    FRIEND_REQUEST_NOT_FOUND = "Friend request not found"
+    USER_BLOCKED = "This action is not allowed"
+    CANNOT_BLOCK_SELF = "You cannot block yourself"
