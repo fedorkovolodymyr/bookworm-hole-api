@@ -116,7 +116,8 @@ app/
 
 - Versioning is fully automated via `python-semantic-release` (`[tool.semantic_release]` in `pyproject.toml`), driven by Conventional Commit messages since the last tag — never hand-edit `version` in `pyproject.toml`.
 - Bump mapping: `fix:` → patch, `feat:` → minor, `BREAKING CHANGE:`/`!` → major (`major_on_zero = true`, so this applies even pre-1.0), `chore:`/`docs:`/`test:` → no bump.
-- The `release` job in `.github/workflows/ci.yml` runs manually (`workflow_dispatch`, gated to `main`), after `lint`/`test`/`precommit` pass. It bumps the version, creates a `vX.Y.Z` tag, and publishes a GitHub release with a changelog from commit messages.
+- `.github/workflows/release.yml` runs automatically on every push to `main` (i.e. every merge). `task release` (`semantic-release version --commit --tag --changelog --vcs-release`) is a no-op when there are no releasable commits since the last tag, so it's safe to run unconditionally — it bumps the version, creates a `vX.Y.Z` tag, and publishes a GitHub release with a changelog from commit messages only when one is warranted. Shares the `main-push-writes` concurrency group with `coverage-badge.yml` so the two don't race pushing to `main` at the same time.
+- The `release` job in `.github/workflows/ci.yml` (`workflow_dispatch`, gated to `main`, after `lint`/`test`/`precommit` pass) still exists for an on-demand manual re-run/troubleshooting — normally unused now that `release.yml` covers every merge.
 - `HealthService.get_version()` (`app/services/health_service.py`) resolves the running version via `importlib.metadata.version("bookworm-hole-api")`, falling back to `"unknown"` if package metadata isn't installed — never hardcode it. Used by `check_overall()` and by `GET /health/version`.
 
 ## Error Tracking (Sentry)
