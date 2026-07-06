@@ -2,6 +2,9 @@ name: Coverage badge
 on:
   push:
     branches: [main]
+concurrency:
+  group: main-push-writes
+  cancel-in-progress: false
 jobs:
   update-badge:
     runs-on: ubuntu-latest
@@ -11,6 +14,11 @@ jobs:
       pull-requests: read
     env:
       GH_TOKEN: ${{ github.token }}
+      POSTGRES_HOST: localhost
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+      POSTGRES_PORT: 5432
     steps:
       - uses: actions/checkout@v7
       - name: Install uv
@@ -27,17 +35,36 @@ jobs:
         run: task install
       - name: Resolve merged PR's CI run
         id: run
+        continue-on-error: true
         run: |
           pr_number=$(gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/pulls" --jq '.[0].number')
           head_sha=$(gh pr view "$pr_number" --json headRefOid --jq '.headRefOid')
           run_id=$(gh run list --workflow=ci.yml --commit "$head_sha" --json databaseId,conclusion --jq '[.[] | select(.conclusion=="success")][0].databaseId')
+          test -n "$run_id" && [ "$run_id" != "null" ]
           echo "id=$run_id" >> "$GITHUB_OUTPUT"
       - name: Download coverage data from that run (skip re-running tests)
+        id: download
+        if: steps.run.outcome == 'success'
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
           name: coverage-data
           run-id: ${{ steps.run.outputs.id }}
           github-token: ${{ github.token }}
+      - name: Run tests to generate coverage data (fallback — PR run/artifact unavailable)
+        if: steps.download.outcome != 'success'
+        run: |
+          docker run -d --name coverage-badge-postgres \
+            -e POSTGRES_USER="$POSTGRES_USER" -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" -e POSTGRES_DB="$POSTGRES_DB" \
+            -p 5432:5432 postgres:17-alpine
+          until docker exec coverage-badge-postgres pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do sleep 1; done
+          printf 'POSTGRES_HOST=%s\n' "$POSTGRES_HOST" >> .env
+          printf 'POSTGRES_USER=%s\n' "$POSTGRES_USER" >> .env
+          printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD" >> .env
+          printf 'POSTGRES_DB=%s\n' "$POSTGRES_DB" >> .env
+          printf 'POSTGRES_PORT=%s\n' "$POSTGRES_PORT" >> .env
+          task alembic-upgrade
+          task test
       - name: Update coverage badge and baseline
         run: |
           task coverage-badge
