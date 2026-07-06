@@ -3,19 +3,21 @@ from datetime import UTC, datetime
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user
 from app.main import app
+from app.models.book_status import BookStatus, BookStatusKind
 from app.models.catalog import ISBN, ISBNKind, Release, ReleaseFormat
 from app.models.catalog import Book as BookModel
+from app.models.collection import Collection, CollectionItem
 from app.models.review import Review
 from app.models.user import User
 
 
 def _login_as(user: User) -> None:
     app.dependency_overrides[get_current_user] = lambda: user
-
 
 BookWithReleases = tuple[BookModel, ISBN, ISBN]
 
@@ -459,3 +461,193 @@ class TestRatingAggregates:
         data = response.json()
         assert data["average_rating"] is None
         assert data["rating_count"] == 0
+
+
+@pytest.fixture
+async def source_and_target_books(
+    db_session: AsyncSession,
+) -> tuple[BookModel, BookModel]:
+    source = BookModel(title="Dune (dup)", description="Duplicate entry")
+    target = BookModel(title="Dune", description="Canonical entry")
+    db_session.add(source)
+    db_session.add(target)
+    await db_session.commit()
+    await db_session.refresh(source)
+    await db_session.refresh(target)
+    return source, target
+
+
+@pytest.fixture
+async def merge_user(db_session: AsyncSession) -> User:
+    user = User(email="merger@example.com", username="merger", display_name="Merger")
+    db_session.add(user)
+    await db_session.commit()
+    await db_session.refresh(user)
+    return user
+
+
+class TestMergeBook:
+    async def test_merge_book_requires_admin(
+        self,
+        async_client: AsyncClient,
+        source_and_target_books: tuple[BookModel, BookModel],
+    ):
+        source, target = source_and_target_books
+
+        response = await async_client.post(
+            f"/api/v1/books/{source.id}/merge-into/{target.id}"
+        )
+        assert response.status_code == 401
+
+    async def test_merge_book_forbidden_for_non_admin(
+        self,
+        reader_client: AsyncClient,
+        source_and_target_books: tuple[BookModel, BookModel],
+    ):
+        source, target = source_and_target_books
+
+        response = await reader_client.post(
+            f"/api/v1/books/{source.id}/merge-into/{target.id}"
+        )
+        assert response.status_code == 403
+
+    async def test_merge_book_source_not_found(
+        self,
+        admin_client: AsyncClient,
+        source_and_target_books: tuple[BookModel, BookModel],
+    ):
+        _, target = source_and_target_books
+
+        response = await admin_client.post(
+            f"/api/v1/books/00000000-0000-0000-0000-000000000000/merge-into/{target.id}"
+        )
+        assert response.status_code == 404
+
+    async def test_merge_book_target_not_found(
+        self,
+        admin_client: AsyncClient,
+        source_and_target_books: tuple[BookModel, BookModel],
+    ):
+        source, _ = source_and_target_books
+
+        response = await admin_client.post(
+            f"/api/v1/books/{source.id}/merge-into/00000000-0000-0000-0000-000000000000"
+        )
+        assert response.status_code == 404
+
+    async def test_merge_book_into_itself_is_conflict(
+        self,
+        admin_client: AsyncClient,
+        source_and_target_books: tuple[BookModel, BookModel],
+    ):
+        source, _ = source_and_target_books
+
+        response = await admin_client.post(
+            f"/api/v1/books/{source.id}/merge-into/{source.id}"
+        )
+        assert response.status_code == 409
+
+    async def test_merge_book_reassigns_releases_and_deletes_source(
+        self,
+        admin_client: AsyncClient,
+        db_session: AsyncSession,
+        source_and_target_books: tuple[BookModel, BookModel],
+    ):
+        source, target = source_and_target_books
+        release = Release(
+            book_id=source.id,
+            format=ReleaseFormat.paperback,
+            publisher="Ace Books",
+            language="en",
+        )
+        db_session.add(release)
+        await db_session.commit()
+        await db_session.refresh(release)
+
+        response = await admin_client.post(
+            f"/api/v1/books/{source.id}/merge-into/{target.id}"
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["id"] == str(target.id)
+        assert any(r["id"] == str(release.id) for r in data["releases"])
+
+        assert await db_session.get(BookModel, source.id) is None
+        moved_release = await db_session.get(Release, release.id)
+        assert moved_release is not None
+        assert moved_release.book_id == target.id
+
+    async def test_merge_book_reassigns_reviews_statuses_and_collection_items(
+        self,
+        admin_client: AsyncClient,
+        db_session: AsyncSession,
+        source_and_target_books: tuple[BookModel, BookModel],
+        merge_user: User,
+    ):
+        source, target = source_and_target_books
+        review = Review(user_id=merge_user.id, book_id=source.id, rating=4)
+        book_status = BookStatus(
+            user_id=merge_user.id, book_id=source.id, status=BookStatusKind.owned
+        )
+        collection = Collection(user_id=merge_user.id, name="My Collection")
+        db_session.add(review)
+        db_session.add(book_status)
+        db_session.add(collection)
+        await db_session.commit()
+        await db_session.refresh(collection)
+        item = CollectionItem(collection_id=collection.id, book_id=source.id)
+        db_session.add(item)
+        await db_session.commit()
+        await db_session.refresh(review)
+        await db_session.refresh(book_status)
+        await db_session.refresh(item)
+
+        response = await admin_client.post(
+            f"/api/v1/books/{source.id}/merge-into/{target.id}"
+        )
+        assert response.status_code == 200
+
+        moved_review = await db_session.get(Review, review.id)
+        moved_status = await db_session.get(BookStatus, book_status.id)
+        moved_item = await db_session.get(CollectionItem, item.id)
+        assert moved_review is not None
+        assert moved_review.book_id == target.id
+        assert moved_status is not None
+        assert moved_status.book_id == target.id
+        assert moved_item is not None
+        assert moved_item.book_id == target.id
+
+    async def test_merge_book_drops_conflicting_duplicate_review(
+        self,
+        admin_client: AsyncClient,
+        db_session: AsyncSession,
+        source_and_target_books: tuple[BookModel, BookModel],
+        merge_user: User,
+    ):
+        source, target = source_and_target_books
+        source_review = Review(
+            user_id=merge_user.id, book_id=source.id, rating=2, title="On the dup"
+        )
+        target_review = Review(
+            user_id=merge_user.id, book_id=target.id, rating=5, title="On the original"
+        )
+        db_session.add(source_review)
+        db_session.add(target_review)
+        await db_session.commit()
+        await db_session.refresh(source_review)
+        await db_session.refresh(target_review)
+
+        response = await admin_client.post(
+            f"/api/v1/books/{source.id}/merge-into/{target.id}"
+        )
+        assert response.status_code == 200
+
+        assert await db_session.get(Review, source_review.id) is None
+        remaining = await db_session.get(Review, target_review.id)
+        assert remaining is not None
+        assert remaining.title == "On the original"
+        result = await db_session.execute(
+            select(Review).where(Review.book_id == target.id)
+        )
+        assert len(result.scalars().all()) == 1

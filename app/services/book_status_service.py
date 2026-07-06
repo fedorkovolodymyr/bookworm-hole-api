@@ -4,12 +4,13 @@ from uuid import UUID
 from fastapi import HTTPException
 
 from app.models.book_status import BookStatus, BookStatusKind
-from app.repositories.book_status_repository import BookStatusRepository
+from app.repositories.book_status_repository import BookStatusRepository, BookStatusSort
 from app.schemas.book_status_schemas import (
     CreateBookStatusSchema,
     LendBookStatusSchema,
     UpdateBookStatusSchema,
 )
+from app.schemas.common_schemas import Page
 
 
 class BookStatusService:
@@ -30,6 +31,19 @@ class BookStatusService:
         self, user_id: UUID, status: BookStatusKind | None = None
     ) -> list[BookStatus]:
         return list(await self.repository.get_all_for_user(user_id, status))
+
+    async def list_page_by_kind(
+        self,
+        user_id: UUID,
+        kind: BookStatusKind,
+        sort: BookStatusSort = "acquired_at",
+        skip: int = 0,
+        limit: int = 10,
+    ) -> Page[BookStatus]:
+        items, total = await self.repository.get_page_for_user(
+            user_id, kind, sort, skip, limit
+        )
+        return Page(items=list(items), total=total, limit=limit, offset=skip)
 
     async def _retrieve_owned(self, user_id: UUID, book_status_id: UUID) -> BookStatus:
         book_status = await self.repository.get_by_id(book_status_id)

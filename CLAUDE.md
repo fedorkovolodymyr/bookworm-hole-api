@@ -20,8 +20,12 @@
 - `task migrate` / `task migrate:new -- "message"` — Alembic, inside the api container
 - `task seed` / `task seed:test` — load dev / test fixture data
 - `task psql` — psql shell against the dev database
+- `task refresh-metadata` — manually refresh stale release metadata from external sources (releases older than N days, default 30)
 - `task release-dry-run` — preview next version bump from commits since last tag, no changes made
 - `task release` — bump `pyproject.toml` version, tag, publish GitHub release (CI-only, see Release Flow)
+- `task coverage-badge` — regenerate `coverage.svg` from the last test run (CI-only, committed on push to `main`)
+- `task coverage-check` — fail if total coverage from the last test run dropped below `.coverage-baseline`
+- `task coverage-update-baseline` — write current total coverage % to `.coverage-baseline` (CI-only, committed on push to `main`)
 
 ## Dev Environments
 
@@ -131,8 +135,13 @@ app/
 - `.claude/` is gitignored — skills live locally only
 - Inside devcontainer: `.venv` is an anonymous volume; host `.venv` not mounted (prevents arch mismatch)
 - `POSTGRES_HOST` overridden to `postgres` in devcontainer/docker-compose (not `localhost`)
-- `.pre-commit-config.yaml` hooks call `task format`/`task lint` (not raw `ruff`/`pyright`) per Task Maintenance rule; format-only hooks (json/yaml/toml/md/whitespace) use the standard `pre-commit-hooks`/`mdformat` repos directly
-- `.github/workflows/ci.yml` re-runs `task lint`, `task test`, `task precommit` so a locally skipped hook (`--no-verify`) is still caught
+- `.pre-commit-config.yaml` hooks call `task format`/`task lint` (not raw `ruff`/`pyright`) per Task Maintenance rule; format-only hooks (json/yaml/toml/md/whitespace) use the standard `pre-commit-hooks`/`mdformat`/`taplo-pre-commit`/`yamllint` repos directly
+- `taplo.toml` pins TOML formatting to 4-space indent (taplo's default is 2-space) — keep in sync if repo indent convention changes; `taplo-lint` runs with `--no-schema` since CI has no network access to the online schema catalog
+- `yamllint` config (inline in `.pre-commit-config.yaml`) disables `document-start`/`truthy`/`line-length` and relaxes `comments` spacing to 1 — matches this repo's existing YAML style (no `---` headers, bare `on:` in GH workflows) rather than rewriting every file
+- No YAML auto-formatter hook (deliberately) — `google/yamlfmt`'s pre-commit hook is `language: golang`, meaning every cache-miss rebuilds it from source via a Go toolchain, dwarfing every other hook's runtime. `yamllint` (pure Python, fast) covers style; format YAML by hand
+- `.github/workflows/ci.yml` splits into parallel `lint`/`test`/`precommit` jobs (each redoes checkout+deps setup, but wall-clock is `max()` not `sum()`); `precommit` job skips `task-format`/`task-lint` hooks since `lint` job already covers ruff/pyright
+- `.coverage-baseline` is a coverage-percentage ratchet, not a fixed floor: `test` job runs `task coverage-check` and fails if the current run's total coverage (`coverage report --format=total`) drops below the committed value; on push to `main` the baseline auto-advances upward (never down) alongside `coverage.svg` in the same auto-commit. `[tool.coverage.report] fail_under = 80` in `pyproject.toml` is the separate absolute floor underneath the ratchet
+- Repo is private on GitHub's free plan — branch protection / required status checks aren't available (Pro-only), so a failing `test`/`lint`/`precommit` check shows red on the PR but doesn't block the merge button; treat the check status as a manual gate until upgrading or making the repo public
 - `.deepsource.toml` Python analyzer config mirrors the ruff/pyright rule set above — keep them in sync when either changes
 
 ## Testing

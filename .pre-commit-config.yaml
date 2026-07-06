@@ -13,7 +13,6 @@ repos:
         language: system
         pass_filenames: false
         types: [python]
-
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
@@ -25,8 +24,18 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
       - id: check-merge-conflict
-
   - repo: https://github.com/executablebooks/mdformat
     rev: 1.0.0
     hooks:
       - id: mdformat
+  - repo: https://github.com/ComPWA/taplo-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: taplo-format
+      - id: taplo-lint
+        args: [--no-schema]
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: [--strict, -d, "{extends: default, rules: {document-start: disable, truthy: disable, line-length: disable, comments: {min-spaces-from-content: 1}}}"]
