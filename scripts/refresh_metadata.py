@@ -29,7 +29,7 @@ if __name__ == "__main__":
         "--older-than-days",
         type=int,
         default=30,
-        help="Refresh releases whose last external sync is older than N days (default: 30)",
+        help="Refresh releases with external sync older than N days (default: 30)",
     )
     args = parser.parse_args()
     asyncio.run(main(args.older_than_days))

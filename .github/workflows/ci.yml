@@ -6,15 +6,15 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v8
         with:
           python-version: "3.14"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       - name: Install Task
-        uses: arduino/setup-task@v2
+        uses: arduino/setup-task@v3
         with:
           version: 3.x
       - name: Install dependencies
@@ -44,15 +44,15 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" --health-interval 2s --health-timeout 5s --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v8
         with:
           python-version: "3.14"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       - name: Install Task
-        uses: arduino/setup-task@v2
+        uses: arduino/setup-task@v3
         with:
           version: 3.x
       - name: Install dependencies
@@ -90,21 +90,21 @@ jobs:
   precommit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v8
         with:
           python-version: "3.14"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       - name: Install Task
-        uses: arduino/setup-task@v2
+        uses: arduino/setup-task@v3
         with:
           version: 3.x
       - name: Install dependencies
         run: task install
       - name: Cache pre-commit envs
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/pre-commit
           key: precommit-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -120,17 +120,17 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Install uv
-        uses: astral-sh/setup-uv@v4
+        uses: astral-sh/setup-uv@v8
         with:
           python-version: "3.14"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
       - name: Install Task
-        uses: arduino/setup-task@v2
+        uses: arduino/setup-task@v3
         with:
           version: 3.x
       - name: Install dependencies
