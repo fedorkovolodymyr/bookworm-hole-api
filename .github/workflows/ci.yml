@@ -15,7 +15,7 @@ jobs:
       POSTGRES_PORT: 5432
     services:
       postgres:
-        image: postgres:17-bookworm
+        image: postgres:17-alpine
         env:
           POSTGRES_USER: ${{ env.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
@@ -23,7 +23,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" --health-interval 10s --health-timeout 5s --health-retries 5
+          --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" --health-interval 2s --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - name: Install uv
@@ -38,6 +38,11 @@ jobs:
           version: 3.x
       - name: Install dependencies
         run: task install
+      - name: Cache pre-commit envs
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: precommit-${{ hashFiles('.pre-commit-config.yaml') }}
       - name: Lint (ruff + pyright)
         run: task lint
       - name: Configure environment
