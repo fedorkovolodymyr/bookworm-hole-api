@@ -11,7 +11,7 @@ jobs:
     permissions:
       contents: write
       actions: read
-      pull-requests: read
+      pull-requests: write
     env:
       GH_TOKEN: ${{ github.token }}
       POSTGRES_HOST: localhost
@@ -65,14 +65,18 @@ jobs:
           printf 'POSTGRES_PORT=%s\n' "$POSTGRES_PORT" >> .env
           task alembic-upgrade
           task test
-      - name: Update coverage badge and baseline
+      - name: Update coverage badge and baseline via auto-merged PR
         run: |
           task coverage-badge
           task coverage-update-baseline
           if ! git diff --quiet -- coverage.svg .coverage-baseline; then
+            branch="chore/coverage-badge-update-${{ github.run_id }}"
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
+            git checkout -b "$branch"
             git add coverage.svg .coverage-baseline
-            git commit -m "chore(coverage): update coverage badge and baseline [skip ci]"
-            git push
+            git commit -m "chore(coverage): update coverage badge and baseline"
+            git push origin "$branch"
+            gh pr create --base main --head "$branch" --title "chore(coverage): update coverage badge and baseline" --body "Automated coverage badge/baseline update."
+            gh pr merge "$branch" --auto --squash
           fi
