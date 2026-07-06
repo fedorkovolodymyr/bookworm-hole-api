@@ -20,6 +20,7 @@
 - `task migrate` / `task migrate:new -- "message"` — Alembic, inside the api container
 - `task seed` / `task seed:test` — load dev / test fixture data
 - `task psql` — psql shell against the dev database
+- `task refresh-metadata` — manually refresh stale release metadata from external sources (releases older than N days, default 30)
 - `task release-dry-run` — preview next version bump from commits since last tag, no changes made
 - `task release` — bump `pyproject.toml` version, tag, publish GitHub release (CI-only, see Release Flow)
 
