@@ -75,15 +75,18 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           awk '/^Name /,0' test-output.txt >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-      - name: Update coverage badge
+      - name: Coverage gate (no regression vs .coverage-baseline)
+        run: task coverage-check
+      - name: Update coverage badge and baseline
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           task coverage-badge
-          if ! git diff --quiet -- coverage.svg; then
+          task coverage-update-baseline
+          if ! git diff --quiet -- coverage.svg .coverage-baseline; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add coverage.svg
-            git commit -m "chore(coverage): update coverage badge [skip ci]"
+            git add coverage.svg .coverage-baseline
+            git commit -m "chore(coverage): update coverage badge and baseline [skip ci]"
             git push
           fi
 

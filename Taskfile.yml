@@ -60,6 +60,21 @@ tasks:
     desc: Regenerate coverage.svg from the last test run (CI-only, committed on push to main)
     cmds:
       - "{{.UV}} run coverage-badge -o coverage.svg -f"
+  coverage-check:
+    desc: Fail if total coverage (from the last test run) dropped below the committed baseline (.coverage-baseline)
+    cmds:
+      - |
+        current=$({{.UV}} run coverage report --format=total)
+        baseline=$(cat .coverage-baseline)
+        echo "coverage: ${current}% (baseline: ${baseline}%)"
+        if [ "$current" -lt "$baseline" ]; then
+          echo "Coverage dropped: ${current}% < ${baseline}%"
+          exit 1
+        fi
+  coverage-update-baseline:
+    desc: Write current total coverage % to .coverage-baseline (CI-only, committed on push to main)
+    cmds:
+      - "{{.UV}} run coverage report --format=total > .coverage-baseline"
   release:
     desc: Bump version, tag, and publish a GitHub release from Conventional Commits since last tag
     cmds:
