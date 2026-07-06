@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -30,7 +33,17 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-      - name: Release (bump version, tag, publish GitHub release — no-op if no releasable commits)
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: task release
+      - name: Bump version, tag locally (no-op if no releasable commits)
+        run: uv run semantic-release version --commit --tag --changelog --no-push --no-vcs-release
+      - name: Push tag and land the bump commit via auto-merged PR (main is protected, can't push directly)
+        run: |
+          tag=$(git describe --tags --exact-match HEAD 2>/dev/null || true)
+          if [ -n "$tag" ]; then
+            git push origin "$tag"
+            branch="chore/release-${tag}"
+            git checkout -b "$branch"
+            git push origin "$branch"
+            gh pr create --base main --head "$branch" --title "chore(release): ${tag}" --body "Automated release ${tag}."
+            gh pr merge "$branch" --auto --merge
+            gh release create "$tag" --generate-notes
+          fi
