@@ -2,10 +2,12 @@ from collections.abc import Sequence
 from typing import Literal
 from uuid import UUID
 
-from sqlalchemy import func
+from sqlalchemy import and_, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.sql import ColumnElement
 from sqlmodel import col, select
 
+from app.models.catalog import Release
 from app.models.review import Review
 from app.schemas.review_schemas import UpdateReviewSchema
 
@@ -111,3 +113,35 @@ class ReviewRepository:
         )
         result = await self.session.execute(query.offset(skip).limit(limit))
         return result.scalars().all(), total
+
+    async def get_rating_aggregate_for_book(
+        self, book_id: UUID
+    ) -> tuple[float | None, int]:
+        release_ids_query = select(Release.id).where(col(Release.book_id) == book_id)
+        release_ids_result = await self.session.execute(release_ids_query)
+        release_ids: list[UUID] = [row[0] for row in release_ids_result.all()]
+
+        target_conditions: list[ColumnElement[bool]] = [col(Review.book_id) == book_id]
+        if release_ids:
+            target_conditions.append(col(Review.release_id).in_(release_ids))
+
+        query = select(func.avg(Review.rating), func.count(col(Review.id))).where(
+            and_(col(Review.is_public).is_(True), or_(*target_conditions))
+        )
+        result = await self.session.execute(query)
+        row = result.first()
+        avg_rating: float | None = float(row[0]) if row and row[0] is not None else None
+        count: int = row[1] if row else 0
+        return avg_rating, count or 0
+
+    async def get_rating_aggregate_for_release(
+        self, release_id: UUID
+    ) -> tuple[float | None, int]:
+        query = select(func.avg(Review.rating), func.count(col(Review.id))).where(
+            and_(col(Review.release_id) == release_id, col(Review.is_public).is_(True))
+        )
+        result = await self.session.execute(query)
+        row = result.first()
+        avg_rating: float | None = float(row[0]) if row and row[0] is not None else None
+        count: int = row[1] if row else 0
+        return avg_rating, count or 0

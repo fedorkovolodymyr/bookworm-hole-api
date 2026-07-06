@@ -24,7 +24,9 @@ releases_router = APIRouter(prefix="/releases", tags=["releases"])
 def get_release_service(
     session: AsyncSession = Depends(get_session),
 ) -> ReleaseService:
-    return ReleaseService(ReleaseRepository(session), BookRepository(session))
+    return ReleaseService(
+        ReleaseRepository(session), BookRepository(session), ReviewRepository(session)
+    )
 
 
 def get_review_service(

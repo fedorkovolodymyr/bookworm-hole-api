@@ -57,6 +57,8 @@ class ReleaseWithISBNsResponse(BaseModel):
     cover_image_url: str | None
     description_override: str | None
     isbns: list[ISBNResponse]
+    average_rating: float | None = None
+    rating_count: int = 0
 
 
 class BookWithReleasesResponse(BaseModel):
@@ -71,6 +73,8 @@ class BookWithReleasesResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     releases: list[ReleaseWithISBNsResponse]
+    average_rating: float | None = None
+    rating_count: int = 0
 
 
 class CreateReleaseSchema(BaseModel):
