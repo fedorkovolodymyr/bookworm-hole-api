@@ -1,210 +1,175 @@
 version: "3"
-
 set: [errexit, pipefail, nounset]
-
 vars:
   UV: uv
   UNVICORN: "uvicorn app.main:app"
   DC: "docker compose"
-
 tasks:
-
   uv:
     desc: Run any uv command (advanced/manual use)
     cmd: "{{.UV}} {{.CLI_ARGS}}"
-
   install:
     desc: Install dependencies
     cmds:
       - task: uv
         vars:
           CLI_ARGS: "sync {{.CLI_ARGS}}"
-
   run:
     desc: Run arbitrary command via uv (default)
     aliases: [exec]
     cmd: "{{.UV}} run {{.UNVICORN}} {{.CLI_ARGS}}"
-
   dev:
     desc: Run FastAPI app locally with Docker PostgreSQL (uses .env)
     dotenv: [".env"]
     cmds:
       - echo "Starting API locally → postgresql://localhost:5432"
       - task: run
-        vars: { CLI_ARGS: "--reload {{.CLI_ARGS}}" }
-
+        vars: {CLI_ARGS: "--reload {{.CLI_ARGS}}"}
   format:
     desc: Format all (imports + code)
     cmds:
       - "{{.UV}} run ruff check --select I --fix {{.CLI_ARGS}}"
       - "{{.UV}} run ruff format {{.CLI_ARGS}}"
-
   lint:
     desc: Lint all (ruff + types)
     cmds:
       - "{{.UV}} run ruff check {{.CLI_ARGS}}"
       - "{{.UV}} run pyright {{.CLI_ARGS}}"
-
   lint-format:
     desc: Format and fix all issues
     cmds:
       - task: format
       - task: lint
-
   test:
     desc: Run tests with pytest against an isolated test database (auto-created/migrated)
     cmds:
       - "{{.UV}} run pytest --cov --cov-report=term-missing {{.CLI_ARGS}}"
-
   type-check:
     desc: Run pyright type checker only
     cmds:
       - "{{.UV}} run pyright {{.CLI_ARGS}}"
-
   precommit-install:
     desc: Install git pre-commit hooks (required first-time setup)
     cmds:
       - "{{.UV}} run pre-commit install"
-
   precommit:
     desc: Run all pre-commit hooks against every file
     cmds:
       - "{{.UV}} run pre-commit run --all-files {{.CLI_ARGS}}"
-
+  coverage-badge:
+    desc: Regenerate coverage.svg from the last test run (CI-only, committed on push to main)
+    cmds:
+      - "{{.UV}} run coverage-badge -o coverage.svg -f"
   release:
     desc: Bump version, tag, and publish a GitHub release from Conventional Commits since last tag
     cmds:
       - "{{.UV}} run semantic-release version --commit --tag --changelog --vcs-release {{.CLI_ARGS}}"
-
   release-dry-run:
     desc: Preview the next version bump without making changes
     cmds:
       - "{{.UV}} run semantic-release version --print {{.CLI_ARGS}}"
-
   docker-compose:
     desc: Docker-compose services
     dotenv: [".env"]
     cmd: "{{.DC}} {{.CLI_ARGS}}"
-
   docker-compose-up:
     desc: Start all docker-compose services
     cmds:
       - task: docker-compose
         vars:
           CLI_ARGS: "up -d {{.CLI_ARGS}}"
-
   docker-compose-stop:
     desc: Stop docker-compose services
     cmds:
       - task: docker-compose
         vars:
           CLI_ARGS: "stop {{.CLI_ARGS}}"
-
   docker-compose-down:
     desc: Down docker-compose services
     cmds:
       - task: docker-compose
         vars:
           CLI_ARGS: "down {{.CLI_ARGS}}"
-
   docker-compose-logs:
     desc: View docker-compose logs
     cmds:
       - task: docker-compose
         vars:
           CLI_ARGS: "logs -f {{.CLI_ARGS}}"
-
   docker-compose-postgres:
     desc: Start only PostgreSQL service
     cmds:
       - task: docker-compose
         vars:
           CLI_ARGS: "up -d postgres {{.CLI_ARGS}}"
-
-
   docker-compose-api:
     desc: Start only API service
     cmds:
       - task: docker-compose
         vars:
           CLI_ARGS: "up -d api {{.CLI_ARGS}}"
-
   alembic:
     desc: Run alembic commands (e.g., task alembic -- history)
     dotenv: [".env"]
     cmd: "{{.UV}} run alembic {{.CLI_ARGS}}"
-
   alembic-revision:
     desc: Create new migration (e.g., task alembic-revision -- "add users table")
     cmds:
       - task: alembic
         vars:
           CLI_ARGS: "revision --autogenerate -m {{.CLI_ARGS}}"
-
   alembic-upgrade:
     desc: Apply migrations (e.g., task alembic-upgrade -- head or +1)
     cmds:
       - task: alembic
         vars:
           CLI_ARGS: "upgrade head"
-
   alembic-downgrade:
     desc: Rollback migrations (e.g., task alembic-downgrade -- -1)
     cmds:
       - task: alembic
         vars:
           CLI_ARGS: "downgrade -1"
-
   up:
     desc: Start the full stack via docker compose (api + postgres + redis)
     dotenv: [".env"]
     cmd: "{{.DC}} up -d --build {{.CLI_ARGS}}"
-
   down:
     desc: Stop and remove the docker compose stack
     dotenv: [".env"]
     cmd: "{{.DC}} down {{.CLI_ARGS}}"
-
   shell:
     desc: Exec an interactive shell into the running api container
     dotenv: [".env"]
     cmd: "{{.DC}} exec api bash"
-
   test-container:
     desc: Run pytest inside the running api container, against an isolated test database
     dotenv: [".env"]
     cmd: "{{.DC}} exec api uv run pytest --cov --cov-report=term-missing {{.CLI_ARGS}}"
-
   lint-container:
     desc: Run ruff check inside the running api container
     dotenv: [".env"]
     cmd: "{{.DC}} exec api uv run ruff check {{.CLI_ARGS}}"
-
   format-container:
     desc: Run ruff format inside the running api container
     dotenv: [".env"]
     cmd: "{{.DC}} exec api uv run ruff format {{.CLI_ARGS}}"
-
   migrate:
     desc: Apply Alembic migrations to head, inside the running api container
     dotenv: [".env"]
     cmd: "{{.DC}} exec api uv run alembic upgrade head"
-
   "migrate:new":
     desc: 'Generate a new Alembic migration (e.g., task migrate:new -- "add users table")'
     dotenv: [".env"]
     cmd: "{{.DC}} exec api uv run alembic revision --autogenerate -m {{.CLI_ARGS}}"
-
   seed:
     desc: Load dev seed data into the running api container's database
     dotenv: [".env"]
     cmd: "{{.DC}} exec api uv run python -m scripts.seed"
-
   "seed:test":
     desc: Load test fixtures into the test database, via the running api container
     dotenv: [".env"]
     cmd: "{{.DC}} exec -e POSTGRES_DB=bookwormhole_test api uv run python -m scripts.seed_test"
-
   psql:
     desc: Open an interactive psql shell against the dev Postgres container
     dotenv: [".env"]

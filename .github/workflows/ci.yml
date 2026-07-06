@@ -1,20 +1,18 @@
 name: CI
-
 on:
   push:
   workflow_dispatch:
-
 jobs:
   ci:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
     env:
       POSTGRES_HOST: localhost
       POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
       POSTGRES_PORT: 5432
-
     services:
       postgres:
         image: postgres:17-bookworm
@@ -25,32 +23,23 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
+          --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v4
-
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
           python-version: "3.14"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
-
       - name: Install Task
         uses: arduino/setup-task@v2
         with:
           version: 3.x
-
       - name: Install dependencies
         run: task install
-
       - name: Lint (ruff + pyright)
         run: task lint
-
       - name: Configure environment
         run: |
           printf 'POSTGRES_HOST=%s\n' "$POSTGRES_HOST" >> .env
@@ -58,13 +47,10 @@ jobs:
           printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD" >> .env
           printf 'POSTGRES_DB=%s\n' "$POSTGRES_DB" >> .env
           printf 'POSTGRES_PORT=%s\n' "$POSTGRES_PORT" >> .env
-
       - name: Apply migrations
         run: task alembic-upgrade
-
       - name: Test
         run: task test | tee test-output.txt
-
       - name: Coverage summary
         if: always()
         run: |
@@ -72,44 +58,47 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           awk '/^Name /,0' test-output.txt >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-
       - name: Pre-commit (formatting hooks only — ruff/pyright already ran via task lint)
         run: task precommit
         env:
           SKIP: task-format,task-lint
-
+      - name: Update coverage badge
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          task coverage-badge
+          if ! git diff --quiet -- coverage.svg; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add coverage.svg
+            git commit -m "chore(coverage): update coverage badge [skip ci]"
+            git push
+          fi
   release:
     needs: ci
     if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
           python-version: "3.14"
           enable-cache: true
           cache-dependency-glob: "uv.lock"
-
       - name: Install Task
         uses: arduino/setup-task@v2
         with:
           version: 3.x
-
       - name: Install dependencies
         run: task install
-
       - name: Configure git identity
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
       - name: Release (bump version, tag, publish GitHub release)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

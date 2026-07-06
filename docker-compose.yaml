@@ -1,5 +1,4 @@
 name: bookworm-hole-api
-
 services:
   api:
     build: .
@@ -23,7 +22,6 @@ services:
       interval: 60s
       timeout: 5s
       retries: 5
-
   postgres:
     restart: always
     image: postgres:17-bookworm
@@ -38,7 +36,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
   redis:
     restart: always
     image: redis:8-bookworm
@@ -51,7 +48,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
 volumes:
   pgdata:
   redisdata:
