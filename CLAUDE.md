@@ -116,7 +116,7 @@ app/
 
 - Versioning is fully automated via `python-semantic-release` (`[tool.semantic_release]` in `pyproject.toml`), driven by Conventional Commit messages since the last tag — never hand-edit `version` in `pyproject.toml`.
 - Bump mapping: `fix:` → patch, `feat:` → minor, `BREAKING CHANGE:`/`!` → major (`major_on_zero = true`, so this applies even pre-1.0), `chore:`/`docs:`/`test:` → no bump.
-- The `release` job in `.github/workflows/ci.yml` runs manually (`workflow_dispatch`, gated to `main`), after the `ci` job (lint + test) passes. It bumps the version, creates a `vX.Y.Z` tag, and publishes a GitHub release with a changelog from commit messages.
+- The `release` job in `.github/workflows/ci.yml` runs manually (`workflow_dispatch`, gated to `main`), after `lint`/`test`/`precommit` pass. It bumps the version, creates a `vX.Y.Z` tag, and publishes a GitHub release with a changelog from commit messages.
 - `HealthService.get_version()` (`app/services/health_service.py`) resolves the running version via `importlib.metadata.version("bookworm-hole-api")`, falling back to `"unknown"` if package metadata isn't installed — never hardcode it. Used by `check_overall()` and by `GET /health/version`.
 
 ## Error Tracking (Sentry)
@@ -139,9 +139,11 @@ app/
 - `taplo.toml` pins TOML formatting to 4-space indent (taplo's default is 2-space) — keep in sync if repo indent convention changes; `taplo-lint` runs with `--no-schema` since CI has no network access to the online schema catalog
 - `yamllint` config (inline in `.pre-commit-config.yaml`) disables `document-start`/`truthy`/`line-length` and relaxes `comments` spacing to 1 — matches this repo's existing YAML style (no `---` headers, bare `on:` in GH workflows) rather than rewriting every file
 - No YAML auto-formatter hook (deliberately) — `google/yamlfmt`'s pre-commit hook is `language: golang`, meaning every cache-miss rebuilds it from source via a Go toolchain, dwarfing every other hook's runtime. `yamllint` (pure Python, fast) covers style; format YAML by hand
-- `.github/workflows/ci.yml` splits into parallel `lint`/`test`/`precommit` jobs (each redoes checkout+deps setup, but wall-clock is `max()` not `sum()`); `precommit` job skips `task-format`/`task-lint` hooks since `lint` job already covers ruff/pyright
-- `.coverage-baseline` is a coverage-percentage ratchet, not a fixed floor: `test` job runs `task coverage-check` and fails if the current run's total coverage (`coverage report --format=total`) drops below the committed value; on push to `main` the baseline auto-advances upward (never down) alongside `coverage.svg` in the same auto-commit. `[tool.coverage.report] fail_under = 80` in `pyproject.toml` is the separate absolute floor underneath the ratchet
-- Repo is private on GitHub's free plan — branch protection / required status checks aren't available (Pro-only), so a failing `test`/`lint`/`precommit` check shows red on the PR but doesn't block the merge button; treat the check status as a manual gate until upgrading or making the repo public
+- `.github/workflows/ci.yml` triggers on `pull_request` (not `push`) so `lint`/`test`/`precommit` run once per PR commit and never again on the merge to `main` — avoids rerunning the whole suite (and re-surfacing flaky/env-only failures) on a commit already validated on the PR branch. Jobs run in parallel (each redoes checkout+deps setup, but wall-clock is `max()` not `sum()`); `precommit` job skips `task-format`/`task-lint` hooks since `lint` job already covers ruff/pyright
+- `.github/workflows/coverage-badge.yml` is a separate workflow, `on: push: branches: [main]` only — it reruns `task test` once post-merge purely to regenerate `coverage.svg`/`.coverage-baseline` and commit them (`[skip ci]`). It is not part of branch protection's required checks, so its job name/status doesn't gate merges or duplicate the PR's `test` check
+- `.coverage-baseline` is a coverage-percentage ratchet, not a fixed floor: PR's `test` job runs `task coverage-check` and fails if the current run's total coverage (`coverage report --format=total`) drops below the committed value; `coverage-badge.yml` auto-advances the baseline upward (never down) alongside `coverage.svg` in the same auto-commit after merge to `main`. `[tool.coverage.report] fail_under = 80` in `pyproject.toml` is the separate absolute floor underneath the ratchet
+- Repo is public; branch protection on `main` requires the `lint`/`test`/`precommit` status checks and blocks force-push/deletion — a failing check now blocks the merge button (previously informational-only while the repo was private on the free plan)
+- `coverage-badge` (PyPI package) imports `pkg_resources`, which Python 3.14 doesn't bundle by default — `setuptools` is pinned as a dev dependency in `pyproject.toml` solely to provide it; removing `setuptools` breaks `task coverage-badge` with `ModuleNotFoundError: No module named 'pkg_resources'`
 - `.deepsource.toml` Python analyzer config mirrors the ruff/pyright rule set above — keep them in sync when either changes
 
 ## Testing
@@ -170,6 +172,7 @@ app/
 - Avoid `# type: ignore`. Allowed only in rare cases.
 - No inline `# noqa` / `# pyright: ignore` suppression comments. If a lint/type rule is a real false positive, fix the root cause structurally (e.g. a shared typed helper — see `app/repositories/loading.py::eager`/`eager_nested` for the SQLModel `selectinload()` + pyright mismatch) instead of silencing it at each call site.
 - Use type hints everywhere: function args, return types, variables.
+- Don't pass a value equal to a parameter's default — omit the argument instead (applies to function calls, `Field(...)`, decorators, config kwargs, etc).
 - Partial-update repository methods (`update(id, data)`) take the Pydantic Update schema (e.g. `UpdateBookSchema`) directly, not `dict`/`dict[str, Any]`. Call `data.model_dump(exclude_unset=True)` then `model.sqlmodel_update(...)` inside the repository method — keeps partial-update semantics (unset fields untouched) while the signature still says what shape the data is. See `app/repositories/book_repository.py::update`.
 
 ## Git
