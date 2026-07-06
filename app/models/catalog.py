@@ -88,6 +88,10 @@ class Release(SQLModel, IdMixin, TimestampMixin, table=True):
     duration_minutes: int | None = Field(default=None)
     cover_image_url: str | None = Field(default=None, max_length=2048)
     description_override: str | None = Field(default=None)
+    last_external_sync_at: datetime | None = Field(
+        default=None,
+        sa_column=Column(DateTime(timezone=True), nullable=True),
+    )
 
     book: Book = Relationship(back_populates="releases")
     isbns: list[ISBN] = Relationship(
