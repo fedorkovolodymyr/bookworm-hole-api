@@ -1,6 +1,7 @@
 name: CI
 
 on:
+  push:
   workflow_dispatch:
 
 jobs:
@@ -36,6 +37,8 @@ jobs:
         uses: astral-sh/setup-uv@v4
         with:
           python-version: "3.14"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install Task
         uses: arduino/setup-task@v2
@@ -60,14 +63,24 @@ jobs:
         run: task alembic-upgrade
 
       - name: Test
-        run: task test
+        run: task test | tee test-output.txt
 
-      - name: Pre-commit (full hook set, catches skipped local --no-verify)
+      - name: Coverage summary
+        if: always()
+        run: |
+          echo '### Coverage' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          awk '/^Name /,0' test-output.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Pre-commit (formatting hooks only — ruff/pyright already ran via task lint)
         run: task precommit
+        env:
+          SKIP: task-format,task-lint
 
   release:
     needs: ci
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -81,6 +94,8 @@ jobs:
         uses: astral-sh/setup-uv@v4
         with:
           python-version: "3.14"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install Task
         uses: arduino/setup-task@v2
