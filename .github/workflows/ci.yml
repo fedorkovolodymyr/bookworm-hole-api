@@ -3,7 +3,26 @@ on:
   push:
   workflow_dispatch:
 jobs:
-  ci:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.14"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+      - name: Install dependencies
+        run: task install
+      - name: Lint (ruff + pyright)
+        run: task lint
+
+  test:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -38,13 +57,6 @@ jobs:
           version: 3.x
       - name: Install dependencies
         run: task install
-      - name: Cache pre-commit envs
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pre-commit
-          key: precommit-${{ hashFiles('.pre-commit-config.yaml') }}
-      - name: Lint (ruff + pyright)
-        run: task lint
       - name: Configure environment
         run: |
           printf 'POSTGRES_HOST=%s\n' "$POSTGRES_HOST" >> .env
@@ -63,10 +75,6 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           awk '/^Name /,0' test-output.txt >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-      - name: Pre-commit (formatting hooks only — ruff/pyright already ran via task lint)
-        run: task precommit
-        env:
-          SKIP: task-format,task-lint
       - name: Update coverage badge
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
@@ -78,8 +86,35 @@ jobs:
             git commit -m "chore(coverage): update coverage badge [skip ci]"
             git push
           fi
+
+  precommit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: "3.14"
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: Install Task
+        uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+      - name: Install dependencies
+        run: task install
+      - name: Cache pre-commit envs
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: precommit-${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Pre-commit (formatting hooks only — ruff/pyright covered by the lint job)
+        run: task precommit
+        env:
+          SKIP: task-format,task-lint
+
   release:
-    needs: ci
+    needs: [lint, test, precommit]
     if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:

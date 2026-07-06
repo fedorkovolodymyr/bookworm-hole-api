@@ -132,10 +132,11 @@ app/
 - `.claude/` is gitignored — skills live locally only
 - Inside devcontainer: `.venv` is an anonymous volume; host `.venv` not mounted (prevents arch mismatch)
 - `POSTGRES_HOST` overridden to `postgres` in devcontainer/docker-compose (not `localhost`)
-- `.pre-commit-config.yaml` hooks call `task format`/`task lint` (not raw `ruff`/`pyright`) per Task Maintenance rule; format-only hooks (json/yaml/toml/md/whitespace) use the standard `pre-commit-hooks`/`mdformat`/`taplo-pre-commit`/`yamlfmt`/`yamllint` repos directly
+- `.pre-commit-config.yaml` hooks call `task format`/`task lint` (not raw `ruff`/`pyright`) per Task Maintenance rule; format-only hooks (json/yaml/toml/md/whitespace) use the standard `pre-commit-hooks`/`mdformat`/`taplo-pre-commit`/`yamllint` repos directly
 - `taplo.toml` pins TOML formatting to 4-space indent (taplo's default is 2-space) — keep in sync if repo indent convention changes; `taplo-lint` runs with `--no-schema` since CI has no network access to the online schema catalog
 - `yamllint` config (inline in `.pre-commit-config.yaml`) disables `document-start`/`truthy`/`line-length` and relaxes `comments` spacing to 1 — matches this repo's existing YAML style (no `---` headers, bare `on:` in GH workflows) rather than rewriting every file
-- `.github/workflows/ci.yml` re-runs `task lint`, `task test`, `task precommit` (with `SKIP=task-format,task-lint` — those already ran via `task lint`) so a locally skipped hook (`--no-verify`) is still caught
+- No YAML auto-formatter hook (deliberately) — `google/yamlfmt`'s pre-commit hook is `language: golang`, meaning every cache-miss rebuilds it from source via a Go toolchain, dwarfing every other hook's runtime. `yamllint` (pure Python, fast) covers style; format YAML by hand
+- `.github/workflows/ci.yml` splits into parallel `lint`/`test`/`precommit` jobs (each redoes checkout+deps setup, but wall-clock is `max()` not `sum()`); `precommit` job skips `task-format`/`task-lint` hooks since `lint` job already covers ruff/pyright
 - `.deepsource.toml` Python analyzer config mirrors the ruff/pyright rule set above — keep them in sync when either changes
 
 ## Testing
