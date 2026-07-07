@@ -15,6 +15,7 @@ from app.models.contribution import Contribution, ContributionKind, Contribution
 from app.models.external_source import ExternalRefKind, ExternalSourceRecord
 from app.models.friendship import Friendship, FriendshipStatus
 from app.models.google_integration import GoogleIntegration
+from app.models.import_record import ImportRecord, ImportRecordStatus
 from app.models.mixins import IdMixin, TimestampMixin
 from app.models.password_reset_token import PasswordResetToken
 from app.models.reading_session import PositionUnit, ReadingSession
@@ -42,6 +43,8 @@ __all__ = [
     "GoogleIntegration",
     "ISBNKind",
     "IdMixin",
+    "ImportRecord",
+    "ImportRecordStatus",
     "PasswordResetToken",
     "PositionUnit",
     "ReadingSession",
