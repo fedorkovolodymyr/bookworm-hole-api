@@ -6,7 +6,7 @@
 - `task lint` — ruff check + pyright (both must pass)
 - `task lint-format` — run format then lint in sequence
 - `task type-check` — pyright only
-- `task test` — pytest (asyncio_mode=auto), against an isolated `*_test` database auto-created/migrated at session start, with coverage report
+- `task test` — pytest (asyncio_mode=auto), against an isolated `*_test` database auto-created/migrated at session start, with coverage report (term-missing + xml)
 - `task test -- --collect-only` — verify pytest config loads
 - `task precommit-install` — install git pre-commit hooks (required first-time setup)
 - `task precommit` — run all pre-commit hooks against every file (same set CI runs)

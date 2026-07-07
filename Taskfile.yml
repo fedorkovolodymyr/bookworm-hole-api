@@ -43,7 +43,7 @@ tasks:
   test:
     desc: Run tests with pytest against an isolated test database (auto-created/migrated)
     cmds:
-      - "{{.UV}} run pytest --cov --cov-report=term-missing {{.CLI_ARGS}}"
+      - "{{.UV}} run pytest --cov --cov-report=term-missing --cov-report=xml {{.CLI_ARGS}}"
   type-check:
     desc: Run pyright type checker only
     cmds:
