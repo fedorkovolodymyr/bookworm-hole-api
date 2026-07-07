@@ -76,3 +76,4 @@ class ErrorMessages:
     GOOGLE_OAUTH_DENIED = "Google OAuth authorization was denied"
     GOOGLE_TOKEN_EXCHANGE_FAILED = "Failed to exchange Google OAuth code for tokens"
     GOOGLE_TOKEN_REFRESH_FAILED = "Failed to refresh Google OAuth access token"
+    INVALID_DATE_RANGE = "from_date must be before or equal to to_date"

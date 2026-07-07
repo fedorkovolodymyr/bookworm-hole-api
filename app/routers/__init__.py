@@ -12,6 +12,7 @@ from app.routers.friends import friends_router
 from app.routers.health import health_router
 from app.routers.integrations import integrations_router
 from app.routers.reading_sessions import reading_sessions_router
+from app.routers.reading_stats import reading_stats_router
 from app.routers.releases import releases_router
 from app.routers.reviews import reviews_router
 from app.routers.status_views import status_views_router
@@ -32,6 +33,7 @@ api_v1.include_router(collections_router)
 api_v1.include_router(external_router)
 api_v1.include_router(friends_router)
 api_v1.include_router(integrations_router)
+api_v1.include_router(reading_stats_router)
 api_v1.include_router(reviews_router)
 api_v1.include_router(contributions_router)
 api_v1.include_router(reading_sessions_router)

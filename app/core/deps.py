@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
 from app.core.db import get_session
 from app.models.user import User
+from app.repositories.reading_stats_repository import ReadingStatsRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
 from app.services.ai.base import AIProvider
@@ -12,6 +13,7 @@ from app.services.ai.noop import NoOpAIProvider
 from app.services.auth_service import AuthService
 from app.services.email_verification_service import EmailVerificationService
 from app.services.mailer import Mailer, build_mailer
+from app.services.reading_stats_service import ReadingStatsService
 
 bearer_scheme = HTTPBearer()
 optional_bearer_scheme = HTTPBearer(auto_error=False)
@@ -63,3 +65,9 @@ def get_ai_provider() -> AIProvider:
         return NoOpAIProvider()
 
     raise ValueError(f"Unknown AI provider: {provider_name}")
+
+
+def get_reading_stats_service(
+    session: AsyncSession = Depends(get_session),
+) -> ReadingStatsService:
+    return ReadingStatsService(ReadingStatsRepository(session))
