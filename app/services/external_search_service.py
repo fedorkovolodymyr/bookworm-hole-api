@@ -1,10 +1,11 @@
 import asyncio
 from difflib import SequenceMatcher
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ErrorMessages, ExternalServiceError
+from app.models.external_source import ExternalSourceRecord
 from app.schemas.external_schemas import (
     ExternalSearchHit,
     ExternalSearchResponse,
@@ -24,49 +25,59 @@ def _normalize_isbn_safe(code: str) -> str | None:
 
 
 def _extract_hit_data(
-    record: Any, source: str
+    record: ExternalSourceRecord, source: str
 ) -> tuple[str, list[str], list[str], str | None, str | None]:
     """Extract title, isbns, authors, cover_url, and source_id from adapter record.
+
+    Dispatches on payload shape (google_books nests fields under `volumeInfo`;
+    every other adapter, including test stubs, uses the flatter open_library-style
+    shape) rather than on the source name, so a newly registered adapter's hits
+    aren't silently dropped.
 
     Returns (title, isbns, authors, cover_image_url, source_id)
     """
     payload = record.payload
-    match source:
-        case "open_library":
-            isbns: list[str] = []
-            for code in payload.get("isbn_13", []) + payload.get("isbn_10", []):
-                normalized = _normalize_isbn_safe(code)
-                if normalized:
-                    isbns.append(normalized)
-            return (
-                payload.get("title", ""),
-                isbns,
-                [payload.get("author_name", "")] if payload.get("author_name") else [],
-                None,
-                payload.get("key", ""),
-            )
-        case "google_books":
-            volume_info: dict[str, Any] = payload.get("volumeInfo", {})
-            isbns_result: list[str] = []
-            for iid in volume_info.get("industryIdentifiers", []):
-                normalized = _normalize_isbn_safe(iid.get("identifier", ""))
-                if normalized:
-                    isbns_result.append(normalized)
-            authors: list[str] = volume_info.get("authors", [])
-            cover_url: str | None = None
-            image_links: dict[str, Any] = volume_info.get("imageLinks", {})
-            if image_links.get("thumbnail") or image_links.get("smallThumbnail"):
-                url = image_links.get("thumbnail") or image_links.get("smallThumbnail")
-                cover_url = url.replace("http://", "https://") if url else None
-            return (
-                volume_info.get("title", ""),
-                isbns_result,
-                authors,
-                cover_url,
-                payload.get("id", ""),
-            )
-        case _:
-            return "", [], [], None, ""
+    if "volumeInfo" in payload:
+        volume_info: dict[str, Any] = payload.get("volumeInfo", {})
+        isbns_result: list[str] = []
+        for iid in volume_info.get("industryIdentifiers", []):
+            normalized = _normalize_isbn_safe(iid.get("identifier", ""))
+            if normalized:
+                isbns_result.append(normalized)
+        authors: list[str] = volume_info.get("authors", [])
+        cover_url: str | None = None
+        image_links: dict[str, Any] = volume_info.get("imageLinks", {})
+        if image_links.get("thumbnail") or image_links.get("smallThumbnail"):
+            url = image_links.get("thumbnail") or image_links.get("smallThumbnail")
+            cover_url = url.replace("http://", "https://") if url else None
+        return (
+            volume_info.get("title", ""),
+            isbns_result,
+            authors,
+            cover_url,
+            payload.get("id", ""),
+        )
+
+    isbns: list[str] = []
+    for code in payload.get("isbn_13", []) + payload.get("isbn_10", []):
+        normalized = _normalize_isbn_safe(code)
+        if normalized:
+            isbns.append(normalized)
+    author_name: Any = payload.get("author_name")
+    authors: list[str]
+    if isinstance(author_name, list):
+        authors = [str(name) for name in cast("list[Any]", author_name)]
+    elif author_name:
+        authors = [str(author_name)]
+    else:
+        authors = []
+    return (
+        payload.get("title", ""),
+        isbns,
+        authors,
+        None,
+        payload.get("key", ""),
+    )
 
 
 def _similarity_ratio(s1: str, s2: str) -> float:

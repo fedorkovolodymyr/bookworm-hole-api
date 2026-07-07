@@ -91,13 +91,19 @@ async def book_with_releases_and_contributors(
     await db_session.flush()
 
     # Add contributor
-    contributor = Contributor(full_name="Test Author")
+    contributor = Contributor(
+        full_name="Test Author", sort_name="Author, Test", slug="test-author"
+    )
     db_session.add(contributor)
     await db_session.flush()
 
-    from app.models.catalog import BookContributor
+    from app.models.catalog import BookContributor, ContributorRole
 
-    book_contributor = BookContributor(book_id=book.id, contributor_id=contributor.id)
+    book_contributor = BookContributor(
+        book_id=book.id,
+        contributor_id=contributor.id,
+        role=ContributorRole.author,
+    )
     db_session.add(book_contributor)
 
     # Add release with ISBNs
@@ -117,7 +123,7 @@ async def book_with_releases_and_contributors(
         release_id=release.id,
         code_normalized="9780123456789",
         code_original="978-0-12-345678-9",
-        kind=ISBNKind.isbn_13,
+        kind=ISBNKind.isbn13,
     )
     db_session.add(isbn)
 
@@ -254,8 +260,9 @@ class TestPerformanceQueries:
         user, _books = user_with_library_items
         # Override to use this user
         from app.core.deps import get_current_user
+        from app.main import app
 
-        async_client.app.dependency_overrides[get_current_user] = lambda: user
+        app.dependency_overrides[get_current_user] = lambda: user
 
         response = await async_client.get("/api/v1/me/library?limit=10")
         assert response.status_code == 200
@@ -264,7 +271,7 @@ class TestPerformanceQueries:
         assert len(data["items"]) == 3
 
         # Cleanup
-        async_client.app.dependency_overrides.pop(get_current_user, None)
+        app.dependency_overrides.pop(get_current_user, None)
 
     async def test_get_collection_query_count(
         self,
@@ -280,8 +287,9 @@ class TestPerformanceQueries:
         """
         user, collection, _books = user_with_collection
         from app.core.deps import get_current_user
+        from app.main import app
 
-        async_client.app.dependency_overrides[get_current_user] = lambda: user
+        app.dependency_overrides[get_current_user] = lambda: user
 
         collection_id = collection.id
         response = await async_client.get(f"/api/v1/collections/{collection_id}")
@@ -292,4 +300,4 @@ class TestPerformanceQueries:
         assert data["items"]["total"] == 3
 
         # Cleanup
-        async_client.app.dependency_overrides.pop(get_current_user, None)
+        app.dependency_overrides.pop(get_current_user, None)

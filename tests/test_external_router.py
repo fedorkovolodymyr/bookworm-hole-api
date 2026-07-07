@@ -111,7 +111,7 @@ class TestSearchRoute:
         )
         _SEARCH_RESULTS["dune"] = [record]
 
-        response = await async_client.get("/api/v1/external/search?q=dune")
+        response = await async_client.get("/api/v1/external/search?q=dune&sources=stub")
 
         assert response.status_code == 200
         data = response.json()
@@ -187,7 +187,7 @@ class TestSearchRoute:
         )
         _SEARCH_RESULTS["dune"] = [record]
 
-        response = await async_client.get("/api/v1/external/search?q=dune")
+        response = await async_client.get("/api/v1/external/search?q=dune&sources=stub")
 
         assert response.status_code == 200
         data = response.json()

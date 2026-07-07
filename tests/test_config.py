@@ -35,6 +35,7 @@ def test_prod_env_with_default_secret_key_raises(monkeypatch: pytest.MonkeyPatch
 def test_prod_env_with_custom_secret_key_succeeds(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("APP_ENV", "prod")
     monkeypatch.setenv("AUTH_SECRET_KEY", "a-real-random-secret")
+    monkeypatch.setenv("ENCRYPTION_KEY", "PfNqQjXTe1RVc9wA5Hn2mB8sK0eD3lF6oJ4uY_gO7pl=")
     settings = Settings()
     assert settings.app_settings.app_env == "prod"
     assert (
