@@ -14,10 +14,13 @@ from app.repositories.book_repository import BookRepository
 from app.repositories.book_status_repository import BookStatusRepository
 from app.repositories.collection_repository import CollectionRepository
 from app.repositories.contributor_repository import ContributorRepository
+from app.repositories.friendship_repository import FriendshipRepository
 from app.repositories.import_repository import ImportRepository
+from app.repositories.reading_session_repository import ReadingSessionRepository
 from app.repositories.review_repository import ReviewRepository, ReviewSort
 from app.repositories.user_repository import UserRepository
 from app.schemas.common_schemas import Page
+from app.schemas.export_schemas import AccountExportResponse
 from app.schemas.import_schemas import ImportReportSchema
 from app.schemas.review_schemas import ReviewResponse
 from app.schemas.user_schemas import (
@@ -29,6 +32,7 @@ from app.schemas.user_schemas import (
 from app.services.book_status_service import BookStatusService
 from app.services.import_service import ImportService
 from app.services.review_service import ReviewService
+from app.services.user_export_service import UserExportService
 from app.services.user_service import UserService
 
 users_router = APIRouter(prefix="/users", tags=["users"])
@@ -57,6 +61,20 @@ def get_import_service(session: AsyncSession = Depends(get_session)) -> ImportSe
         ContributorRepository(session),
         ImportRepository(session),
         BookStatusRepository(session),
+    )
+
+
+def get_export_service(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> UserExportService:
+    return UserExportService(
+        current_user,
+        CollectionRepository(session),
+        BookStatusRepository(session),
+        ReviewRepository(session),
+        ReadingSessionRepository(session),
+        FriendshipRepository(session),
     )
 
 
@@ -233,3 +251,11 @@ async def import_goodreads_library(
         column_mapping=column_mapping,
         source_type="goodreads",
     )
+
+
+@users_router.get("/me/export/all.json", response_model=AccountExportResponse)
+async def export_account(
+    service: UserExportService = Depends(get_export_service),
+):
+    """Export complete account data including profile, collections, and history."""
+    return await service.export_account()
