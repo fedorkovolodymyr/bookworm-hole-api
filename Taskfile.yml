@@ -189,6 +189,10 @@ tasks:
     desc: Load real-book seed catalog into the running api container's database
     dotenv: [".env"]
     cmd: "{{.DC}} exec api uv run python -m scripts.seed_catalog"
+  "seed:dev":
+    desc: Load dev fixtures (sample users, collections, reviews) on top of catalog
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api uv run python -m scripts.seed_dev"
   psql:
     desc: Open an interactive psql shell against the dev Postgres container
     dotenv: [".env"]
