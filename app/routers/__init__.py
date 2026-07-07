@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.routers.ai import ai_router
 from app.routers.auth import auth_router
 from app.routers.books import books_router
 from app.routers.collections import collections_router
@@ -17,6 +18,7 @@ from app.routers.users import users_router
 
 api_v1 = APIRouter(prefix="/api/v1")
 
+api_v1.include_router(ai_router)
 api_v1.include_router(health_router)
 api_v1.include_router(books_router)
 api_v1.include_router(releases_router)
