@@ -26,6 +26,8 @@ dependencies = [
 [dependency-groups]
 dev = [
     "coverage-badge>=1.1.0",
+    "faker>=24.0.0",
+    "polyfactory>=2.14.0",
     "pre-commit>=4.0.0",
     "pytest>=8.0.0",
     "pytest-asyncio>=0.24.0",

@@ -185,6 +185,10 @@ tasks:
     desc: Load test fixtures into the test database, via the running api container
     dotenv: [".env"]
     cmd: "{{.DC}} exec -e POSTGRES_DB=bookwormhole_test api uv run python -m scripts.seed_test"
+  "seed:dev":
+    desc: Load dev fixtures (sample users, collections, reviews) on top of catalog
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api uv run python -m scripts.seed_dev"
   psql:
     desc: Open an interactive psql shell against the dev Postgres container
     dotenv: [".env"]
