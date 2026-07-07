@@ -4,6 +4,7 @@ from app.services.external.open_library import OpenLibraryAdapter
 from app.services.external.registry import (
     AdapterNotFoundError,
     get_adapter,
+    get_all_adapter_names,
     register_adapter,
 )
 
@@ -13,5 +14,6 @@ __all__ = [
     "GoogleBooksAdapter",
     "OpenLibraryAdapter",
     "get_adapter",
+    "get_all_adapter_names",
     "register_adapter",
 ]
