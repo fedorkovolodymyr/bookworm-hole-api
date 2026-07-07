@@ -1,12 +1,18 @@
+from __future__ import annotations
+
 import enum
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import CheckConstraint, Column, DateTime, Index
 from sqlalchemy import Enum as SAEnum
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship, SQLModel
 
 from app.models.mixins import IdMixin, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.catalog import Book, Release
 
 
 class BookStatusKind(str, enum.Enum):
@@ -53,3 +59,6 @@ class BookStatus(SQLModel, IdMixin, TimestampMixin, table=True):
     returned_at: datetime | None = Field(
         default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
     )
+
+    book: Book | None = Relationship()
+    release: Release | None = Relationship()

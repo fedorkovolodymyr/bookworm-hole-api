@@ -1,8 +1,12 @@
+import csv
+import io
+from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
 from uuid import UUID
 
 from fastapi import HTTPException
 
+from app.core.errors import ExternalServiceError
 from app.models.book_status import BookStatus, BookStatusKind
 from app.repositories.book_status_repository import BookStatusRepository, BookStatusSort
 from app.schemas.book_status_schemas import (
@@ -95,3 +99,115 @@ class BookStatusService:
         book_status.lent_to_user_id = None
         book_status.lent_to_name = None
         return await self.repository.save(book_status)
+
+    async def export_library_csv(
+        self,
+        user_id: UUID,
+    ) -> AsyncGenerator[str]:
+        try:
+            statuses = await self.repository.get_all_for_user_with_eager_load(user_id)
+
+            output = io.StringIO()
+            writer = csv.writer(output)
+        except Exception as e:
+            raise ExternalServiceError(f"Failed to export library: {e!s}") from e
+
+        headers = [
+            "book_title",
+            "authors",
+            "release_format",
+            "publisher",
+            "published_year",
+            "language",
+            "isbn",
+            "status",
+            "acquired_at",
+            "notes",
+        ]
+        writer.writerow(headers)
+        yield output.getvalue()
+        output.truncate(0)
+        output.seek(0)
+
+        for status in statuses:
+            book_title = ""
+            authors = ""
+            release_format = ""
+            publisher = ""
+            published_year = ""
+            language = ""
+            isbn = ""
+
+            release = status.release
+            book = status.book
+
+            if release:
+                book_title = release.book.title if release.book else ""
+                release_format = release.format.value if release.format else ""
+                publisher = release.publisher if release.publisher else ""
+                published_year = (
+                    str(release.published_year) if release.published_year else ""
+                )
+                language = release.language if release.language else ""
+
+                if release.isbns:
+                    isbn = release.isbns[0].code_normalized if release.isbns else ""
+
+                contributors = release.contributors if release.contributors else []
+                author_names = [
+                    c.full_name
+                    for c in contributors
+                    if c and hasattr(c, "full_name") and c.full_name
+                ]
+                authors = "; ".join(author_names)
+            elif book:
+                book_title = book.title if book.title else ""
+
+                if book.releases:
+                    first_release = book.releases[0]
+                    release_format = (
+                        first_release.format.value if first_release.format else ""
+                    )
+                    publisher = (
+                        first_release.publisher if first_release.publisher else ""
+                    )
+                    published_year = (
+                        str(first_release.published_year)
+                        if first_release.published_year
+                        else ""
+                    )
+                    language = first_release.language if first_release.language else ""
+
+                    if first_release.isbns:
+                        isbn = first_release.isbns[0].code_normalized
+
+                contributors = book.contributors if book.contributors else []
+                author_names = [
+                    c.full_name
+                    for c in contributors
+                    if c and hasattr(c, "full_name") and c.full_name
+                ]
+                authors = "; ".join(author_names)
+
+            status_str = status.status.value if status.status else ""
+            acquired_at_str = (
+                status.acquired_at.isoformat() if status.acquired_at else ""
+            )
+            notes_str = status.notes if status.notes else ""
+
+            row = [
+                book_title,
+                authors,
+                release_format,
+                publisher,
+                published_year,
+                language,
+                isbn,
+                status_str,
+                acquired_at_str,
+                notes_str,
+            ]
+            writer.writerow(row)
+            yield output.getvalue()
+            output.truncate(0)
+            output.seek(0)

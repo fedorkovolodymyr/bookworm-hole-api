@@ -1,11 +1,14 @@
+from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
 from app.core.deps import get_current_user
 from app.models.user import User
+from app.repositories.book_status_repository import BookStatusRepository
 from app.repositories.collection_repository import CollectionRepository
 from app.repositories.review_repository import ReviewRepository, ReviewSort
 from app.repositories.user_repository import UserRepository
@@ -17,10 +20,17 @@ from app.schemas.user_schemas import (
     UpdateUserSchema,
     UserProfileResponse,
 )
+from app.services.book_status_service import BookStatusService
 from app.services.review_service import ReviewService
 from app.services.user_service import UserService
 
 users_router = APIRouter(prefix="/users", tags=["users"])
+
+
+def get_book_status_service(
+    session: AsyncSession = Depends(get_session),
+) -> BookStatusService:
+    return BookStatusService(BookStatusRepository(session))
 
 
 def get_review_service(
@@ -64,6 +74,21 @@ async def deactivate_own_account(
 ):
     """Soft-deactivate the account. Reversible by an admin."""
     return await service.deactivate(current_user.id)
+
+
+@users_router.get("/me/export/library.csv")
+async def export_library_csv(
+    current_user: User = Depends(get_current_user),
+    service: BookStatusService = Depends(get_book_status_service),
+) -> StreamingResponse:
+    """Export user's library as CSV download."""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"library_{timestamp}.csv"
+    return StreamingResponse(
+        service.export_library_csv(current_user.id),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
 
 
 @users_router.get("/{username}", response_model=PublicUserProfileResponse)
