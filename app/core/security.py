@@ -75,3 +75,35 @@ def create_password_reset_token(user_id: UUID) -> tuple[str, str, datetime]:
     )
     token = _encode_token(user_id, jti, expires_at)
     return token, jti, expires_at
+
+
+def create_oauth_state(user_id: UUID) -> str:
+    """Signed, short-lived CSRF token binding an OAuth callback to the user who
+    initiated it. Not stored server-side: JWT signature + expiry are the guarantee."""
+    expires_at = datetime.now(UTC) + timedelta(
+        minutes=settings.google_oauth_settings.state_expire_minutes
+    )
+    now = datetime.now(UTC)
+    payload = {
+        "sub": str(user_id),
+        "purpose": "google_oauth_state",
+        "iat": now,
+        "exp": expires_at,
+        "jti": str(uuid4()),
+    }
+    return jwt.encode(
+        payload,
+        settings.auth_settings.secret_key,
+        algorithm=settings.auth_settings.algorithm,
+    )
+
+
+def decode_oauth_state(state: str) -> UUID:
+    payload = jwt.decode(
+        state,
+        settings.auth_settings.secret_key,
+        algorithms=[settings.auth_settings.algorithm],
+    )
+    if payload.get("purpose") != "google_oauth_state":
+        raise jwt.InvalidTokenError("Unexpected token purpose")
+    return UUID(payload["sub"])

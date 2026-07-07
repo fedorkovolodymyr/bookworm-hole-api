@@ -71,3 +71,8 @@ class ErrorMessages:
     PASSWORD_RESET_TOKEN_EXPIRED = "Password reset token has expired"
     PASSWORD_RESET_TOKEN_USED = "Password reset token has already been used"
     PASSWORD_RESET_TOKEN_INVALID = "Invalid password reset token"
+    GOOGLE_INTEGRATION_NOT_FOUND = "Google integration not found"
+    INVALID_OAUTH_STATE = "Invalid or expired OAuth state"
+    GOOGLE_OAUTH_DENIED = "Google OAuth authorization was denied"
+    GOOGLE_TOKEN_EXCHANGE_FAILED = "Failed to exchange Google OAuth code for tokens"
+    GOOGLE_TOKEN_REFRESH_FAILED = "Failed to refresh Google OAuth access token"
