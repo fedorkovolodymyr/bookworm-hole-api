@@ -1,7 +1,12 @@
 from fastapi import APIRouter, Depends, status
 
-from app.core.deps import get_auth_service, get_current_user
+from app.core.deps import (
+    get_auth_service,
+    get_current_user,
+    get_email_verification_service,
+)
 from app.models.user import User
+from app.routers.responses import AUTH_RESPONSE
 from app.schemas.auth_schemas import (
     LoginSchema,
     RefreshRequestSchema,
@@ -9,8 +14,10 @@ from app.schemas.auth_schemas import (
     RegisterSchema,
     TokenResponse,
     UserResponse,
+    VerifyEmailConfirmSchema,
 )
 from app.services.auth_service import AuthService
+from app.services.email_verification_service import EmailVerificationService
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -62,3 +69,33 @@ async def logout(
 @auth_router.get("/me", response_model=UserResponse)
 async def me(current_user: User = Depends(get_current_user)):
     return current_user
+
+
+@auth_router.post(
+    "/verify/request",
+    status_code=status.HTTP_202_ACCEPTED,
+    responses=AUTH_RESPONSE,
+    summary="Request an email verification token for the current user",
+)
+async def request_email_verification(
+    current_user: User = Depends(get_current_user),
+    verification_service: EmailVerificationService = Depends(
+        get_email_verification_service
+    ),
+) -> None:
+    await verification_service.request_verification(current_user)
+
+
+@auth_router.post(
+    "/verify/confirm",
+    response_model=UserResponse,
+    summary="Confirm email ownership using a signed verification token",
+)
+async def confirm_email_verification(
+    data: VerifyEmailConfirmSchema,
+    verification_service: EmailVerificationService = Depends(
+        get_email_verification_service
+    ),
+) -> UserResponse:
+    user = await verification_service.confirm_verification(data.token)
+    return UserResponse.model_validate(user)

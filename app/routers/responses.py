@@ -4,8 +4,13 @@ NOT_FOUND_RESPONSE: dict[int | str, dict[str, Any]] = {
     404: {"description": "Resource not found"},
 }
 
-ADMIN_RESPONSES: dict[int | str, dict[str, Any]] = {
+AUTH_RESPONSE: dict[int | str, dict[str, Any]] = {
     401: {"description": "Missing or invalid credentials"},
+    403: {"description": "Missing or invalid credentials"},
+}
+
+ADMIN_RESPONSES: dict[int | str, dict[str, Any]] = {
+    **AUTH_RESPONSE,
     403: {"description": "Admin privileges required"},
 }
 

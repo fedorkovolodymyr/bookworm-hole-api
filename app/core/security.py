@@ -2,8 +2,12 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import jwt
+from itsdangerous import URLSafeTimedSerializer
 
 from app.core.config import settings
+
+EMAIL_VERIFICATION_SALT = "email-verification"
+EMAIL_VERIFICATION_MAX_AGE_SECONDS = 60 * 60 * 24
 
 
 def _encode_token(user_id: UUID, jti: str, expires_at: datetime) -> str:
@@ -43,3 +47,22 @@ def decode_token(token: str) -> dict[str, str]:
         settings.auth_settings.secret_key,
         algorithms=[settings.auth_settings.algorithm],
     )
+
+
+def _email_verification_serializer() -> URLSafeTimedSerializer:
+    return URLSafeTimedSerializer(settings.auth_settings.secret_key)
+
+
+def create_email_verification_token(user_id: UUID) -> str:
+    return _email_verification_serializer().dumps(
+        str(user_id), salt=EMAIL_VERIFICATION_SALT
+    )
+
+
+def decode_email_verification_token(token: str) -> UUID:
+    user_id_str = _email_verification_serializer().loads(
+        token,
+        salt=EMAIL_VERIFICATION_SALT,
+        max_age=EMAIL_VERIFICATION_MAX_AGE_SECONDS,
+    )
+    return UUID(user_id_str)

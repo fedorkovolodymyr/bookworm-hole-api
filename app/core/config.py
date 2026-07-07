@@ -111,6 +111,23 @@ class GoogleBooksSettings(BaseSettings):
     )
 
 
+class MailerSettings(BaseSettings):
+    backend: Literal["console", "smtp"] = "console"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from_email: str = "noreply@bookwormhole.app"
+
+    model_config = SettingsConfigDict(
+        env_prefix="MAILER_",
+        case_sensitive=False,
+        extra="ignore",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+
 class SentrySettings(BaseSettings):
     dsn: str | None = None
     traces_sample_rate: float = 0.0
@@ -134,6 +151,7 @@ class Settings:
         self.open_library_settings = OpenLibrarySettings()
         self.google_books_settings = GoogleBooksSettings()
         self.sentry_settings = SentrySettings()
+        self.mailer_settings = MailerSettings()
 
         if (
             self.app_settings.app_env == "prod"
@@ -143,6 +161,12 @@ class Settings:
             raise RuntimeError(
                 "AUTH_SECRET_KEY must be set to a non-default value when APP_ENV=prod"
             )
+
+        if (
+            self.mailer_settings.backend == "smtp"
+            and not self.mailer_settings.smtp_host
+        ):
+            raise RuntimeError("MAILER_SMTP_HOST must be set when MAILER_BACKEND=smtp")
 
     @property
     def database_url(self) -> str:
