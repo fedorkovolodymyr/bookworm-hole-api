@@ -18,7 +18,7 @@
 - `task shell` — shell into the running api container
 - `task test-container` / `task lint-container` / `task format-container` — same, run inside the api container
 - `task migrate` / `task migrate:new -- "message"` — Alembic, inside the api container
-- `task seed` / `task seed:test` — load dev / test fixture data
+- `task seed` / `task seed:test` / `task seed:catalog` — load dev / test / catalog seed data
 - `task psql` — psql shell against the dev database
 - `task refresh-metadata` — manually refresh stale release metadata from external sources (releases older than N days, default 30)
 - `task release-dry-run` — preview next version bump from commits since last tag, no changes made
