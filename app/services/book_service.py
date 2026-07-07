@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import HTTPException
 
 from app.core.errors import ConflictError, ErrorMessages, NotFoundError
-from app.models.catalog import Book
+from app.models.catalog import Book, Contributor, ContributorRole
 from app.repositories.book_repository import BookRepository
 from app.repositories.review_repository import ReviewRepository
 from app.schemas.book_schemas import (
@@ -100,3 +100,36 @@ class BookService:
         if not merged:
             raise NotFoundError(ErrorMessages.BOOK_NOT_FOUND)
         return merged
+
+    async def add_contributor(
+        self, book_id: UUID, contributor_id: UUID, role: ContributorRole
+    ) -> bool:
+        book = await self.repository.get_by_id(book_id)
+        if not book:
+            raise NotFoundError(ErrorMessages.BOOK_NOT_FOUND)
+
+        from app.repositories.contributor_repository import ContributorRepository
+
+        contributor_repo = ContributorRepository(self.repository.session)
+        contributor = await contributor_repo.get_by_id(contributor_id)
+        if not contributor:
+            raise NotFoundError(ErrorMessages.CONTRIBUTOR_NOT_FOUND)
+
+        return await self.repository.add_contributor(book_id, contributor_id, role)
+
+    async def remove_contributor(
+        self, book_id: UUID, contributor_id: UUID, role: ContributorRole
+    ) -> None:
+        book = await self.repository.get_by_id(book_id)
+        if not book:
+            raise NotFoundError(ErrorMessages.BOOK_NOT_FOUND)
+
+        contributor = await self.repository.session.get(Contributor, contributor_id)
+        if not contributor:
+            raise NotFoundError(ErrorMessages.CONTRIBUTOR_NOT_FOUND)
+
+        removed = await self.repository.remove_contributor(
+            book_id, contributor_id, role
+        )
+        if not removed:
+            raise NotFoundError("Contributor not attached to this book")

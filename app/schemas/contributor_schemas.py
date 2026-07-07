@@ -64,3 +64,8 @@ class ContributorDetailResponse(BaseModel):
     updated_at: datetime
     books_by_role: dict[ContributorRole, list[ContributorBookSummary]]
     releases_by_role: dict[ContributorRole, list[ContributorReleaseSummary]]
+
+
+class AddContributorSchema(BaseModel):
+    contributor_id: UUID
+    role: ContributorRole
