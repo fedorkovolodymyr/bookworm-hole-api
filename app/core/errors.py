@@ -68,3 +68,6 @@ class ErrorMessages:
     READING_SESSION_NOT_FOUND = "Reading session not found"
     READING_SESSION_ALREADY_ACTIVE = "Reading session already active for this release"
     READING_SESSION_NOT_ACTIVE = "No active reading session for this release"
+    PASSWORD_RESET_TOKEN_EXPIRED = "Password reset token has expired"
+    PASSWORD_RESET_TOKEN_USED = "Password reset token has already been used"
+    PASSWORD_RESET_TOKEN_INVALID = "Invalid password reset token"

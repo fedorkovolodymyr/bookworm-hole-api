@@ -41,3 +41,18 @@ class PublicUserProfileResponse(BaseModel):
     bio: str | None
     avatar_url: str | None
     collections: Page[CollectionResponse]
+
+
+class AdminUserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    email: str
+    username: str
+    display_name: str
+    is_active: bool
+    is_admin: bool
+
+
+class PasswordResetTokenResponse(BaseModel):
+    reset_token: str

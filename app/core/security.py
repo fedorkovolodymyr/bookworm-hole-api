@@ -66,3 +66,12 @@ def decode_email_verification_token(token: str) -> UUID:
         max_age=EMAIL_VERIFICATION_MAX_AGE_SECONDS,
     )
     return UUID(user_id_str)
+
+
+def create_password_reset_token(user_id: UUID) -> tuple[str, str, datetime]:
+    jti = str(uuid4())
+    expires_at = datetime.now(UTC) + timedelta(
+        minutes=settings.auth_settings.password_reset_token_expire_minutes
+    )
+    token = _encode_token(user_id, jti, expires_at)
+    return token, jti, expires_at

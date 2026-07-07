@@ -1,6 +1,8 @@
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from uuid import UUID
 
+from sqlalchemy import ColumnElement, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
@@ -72,3 +74,66 @@ class UserRepository:
         await self.session.commit()
         await self.session.refresh(user)
         return user
+
+    async def activate(self, user_id: UUID) -> User | None:
+        user = await self.session.get(User, user_id)
+        if not user:
+            return None
+        user.is_active = True
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+    async def promote(self, user_id: UUID) -> User | None:
+        user = await self.session.get(User, user_id)
+        if not user:
+            return None
+        user.is_admin = True
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+    async def demote(self, user_id: UUID) -> User | None:
+        user = await self.session.get(User, user_id)
+        if not user:
+            return None
+        user.is_admin = False
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+    async def get_all(
+        self,
+        skip: int = 0,
+        limit: int = 10,
+        email: str | None = None,
+        username: str | None = None,
+        is_active: bool | None = None,
+        is_admin: bool | None = None,
+    ) -> tuple[Sequence[User], int]:
+        filters: list[ColumnElement[bool]] = []
+
+        if email:
+            filters.append(col(User.email).ilike(f"%{email}%"))
+        if username:
+            filters.append(col(User.username).ilike(f"%{username}%"))
+        if is_active is not None:
+            filters.append(col(User.is_active) == is_active)
+        if is_admin is not None:
+            filters.append(col(User.is_admin) == is_admin)
+
+        base_query = select(User).order_by(col(User.created_at).desc())
+        count_query = select(func.count(col(User.id)))
+
+        for condition in filters:
+            base_query = base_query.where(condition)
+            count_query = count_query.where(condition)
+
+        total = (await self.session.execute(count_query)).scalar() or 0
+
+        result = await self.session.execute(base_query.offset(skip).limit(limit))
+        users = result.scalars().all()
+        return users, total

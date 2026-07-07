@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.routers.admin_users import admin_users_router
 from app.routers.ai import ai_router
 from app.routers.auth import auth_router
 from app.routers.books import books_router
@@ -33,3 +34,4 @@ api_v1.include_router(reviews_router)
 api_v1.include_router(contributions_router)
 api_v1.include_router(reading_sessions_router)
 api_v1.include_router(users_router)
+api_v1.include_router(admin_users_router)
