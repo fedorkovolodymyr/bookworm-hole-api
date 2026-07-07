@@ -125,6 +125,18 @@ class SentrySettings(BaseSettings):
     )
 
 
+class AISettings(BaseSettings):
+    provider: str = "noop"
+
+    model_config = SettingsConfigDict(
+        env_prefix="AI_",
+        case_sensitive=False,
+        extra="ignore",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+
 class Settings:
     def __init__(self):
         self.api_settings = APISettings()
@@ -134,6 +146,7 @@ class Settings:
         self.open_library_settings = OpenLibrarySettings()
         self.google_books_settings = GoogleBooksSettings()
         self.sentry_settings = SentrySettings()
+        self.ai_settings = AISettings()
 
         if (
             self.app_settings.app_env == "prod"
