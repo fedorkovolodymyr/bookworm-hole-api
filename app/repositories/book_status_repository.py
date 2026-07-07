@@ -9,6 +9,7 @@ from sqlmodel import col, select
 
 from app.models.book_status import BookStatus, BookStatusKind
 from app.models.catalog import Book, Release
+from app.repositories.loading import eager
 from app.schemas.book_status_schemas import UpdateBookStatusSchema
 
 BookStatusSort = Literal["acquired_at", "title"]
@@ -33,6 +34,21 @@ class BookStatusRepository:
         query = select(BookStatus).where(col(BookStatus.user_id) == user_id)
         if status:
             query = query.where(col(BookStatus.status) == status)
+        result = await self.session.execute(query)
+        return result.scalars().all()
+
+    async def get_all_for_user_with_eager_load(
+        self,
+        user_id: UUID,
+    ) -> Sequence[BookStatus]:
+        query = (
+            select(BookStatus)
+            .where(col(BookStatus.user_id) == user_id)
+            .options(
+                eager(BookStatus.book),
+                eager(BookStatus.release),
+            )
+        )
         result = await self.session.execute(query)
         return result.scalars().all()
 

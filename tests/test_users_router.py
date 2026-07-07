@@ -1,4 +1,7 @@
+import csv
 from collections.abc import AsyncIterator
+from datetime import UTC, datetime
+from io import StringIO
 
 import pytest
 from httpx import AsyncClient
@@ -6,6 +9,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user
 from app.main import app
+from app.models.book_status import BookStatus, BookStatusKind
+from app.models.catalog import Book as BookModel
+from app.models.catalog import Contributor, Release, ReleaseFormat
 from app.models.collection import Collection
 from app.models.user import User
 from app.services.security import hash_password, verify_password
@@ -195,3 +201,137 @@ class TestRetrievePublicProfile:
         assert body["collections"]["total"] == 1
         names = [item["name"] for item in body["collections"]["items"]]
         assert names == ["Public Reads"]
+
+
+@pytest.fixture
+async def book_with_release(db_session: AsyncSession) -> BookModel:
+    book = BookModel(title="Dune", description="Desert planet epic")
+    db_session.add(book)
+    await db_session.flush()
+
+    release = Release(
+        book_id=book.id,
+        format=ReleaseFormat.hardcover,
+        publisher="Ace Books",
+        published_year=1965,
+        language="en",
+    )
+    db_session.add(release)
+    await db_session.flush()
+
+    contributor = Contributor(
+        full_name="Frank Herbert",
+        sort_name="Herbert, Frank",
+        slug="frank-herbert",
+    )
+    db_session.add(contributor)
+    await db_session.flush()
+
+    book.contributors.append(contributor)
+    db_session.add(book)
+    await db_session.commit()
+    await db_session.refresh(book)
+    return book
+
+
+class TestExportLibraryCSV:
+    async def test_requires_auth(self, async_client: AsyncClient):
+        response = await async_client.get("/api/v1/users/me/export/library.csv")
+        assert response.status_code == 401
+
+    async def test_empty_library(self, async_client: AsyncClient, owner: User):
+        response = await async_client.get("/api/v1/users/me/export/library.csv")
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "text/csv; charset=utf-8"
+        assert "attachment" in response.headers.get("content-disposition", "")
+
+        reader = csv.reader(StringIO(response.text))
+        rows = list(reader)
+        assert len(rows) == 1
+        assert rows[0] == [
+            "book_title",
+            "authors",
+            "release_format",
+            "publisher",
+            "published_year",
+            "language",
+            "isbn",
+            "status",
+            "acquired_at",
+            "notes",
+        ]
+
+    async def test_single_status_with_release(
+        self,
+        async_client: AsyncClient,
+        owner: User,
+        book_with_release: BookModel,
+        db_session: AsyncSession,
+    ):
+        release = book_with_release.releases[0]
+        status = BookStatus(
+            user_id=owner.id,
+            release_id=release.id,
+            status=BookStatusKind.owned,
+            acquired_at=datetime(2024, 1, 15, 12, 0, 0, tzinfo=UTC),
+            notes="Great read",
+        )
+        db_session.add(status)
+        await db_session.commit()
+
+        response = await async_client.get("/api/v1/users/me/export/library.csv")
+        assert response.status_code == 200
+
+        reader = csv.reader(StringIO(response.text))
+        rows = list(reader)
+        assert len(rows) == 2
+        assert rows[0][0] == "book_title"
+
+        data_row = rows[1]
+        assert data_row[0] == "Dune"
+        assert data_row[1] == "Frank Herbert"
+        assert data_row[2] == "hardcover"
+        assert data_row[3] == "Ace Books"
+        assert data_row[4] == "1965"
+        assert data_row[5] == "en"
+        assert data_row[7] == "owned"
+        assert "2024-01-15" in data_row[8]
+        assert data_row[9] == "Great read"
+
+    async def test_multiple_statuses(
+        self,
+        async_client: AsyncClient,
+        owner: User,
+        book_with_release: BookModel,
+        db_session: AsyncSession,
+    ):
+        release = book_with_release.releases[0]
+
+        status1 = BookStatus(
+            user_id=owner.id,
+            release_id=release.id,
+            status=BookStatusKind.owned,
+            acquired_at=datetime(2024, 1, 15, tzinfo=UTC),
+        )
+        status2 = BookStatus(
+            user_id=owner.id,
+            book_id=book_with_release.id,
+            status=BookStatusKind.wishlist,
+            acquired_at=datetime(2024, 2, 1, tzinfo=UTC),
+        )
+        db_session.add(status1)
+        db_session.add(status2)
+        await db_session.commit()
+
+        response = await async_client.get("/api/v1/users/me/export/library.csv")
+        assert response.status_code == 200
+
+        reader = csv.reader(StringIO(response.text))
+        rows = list(reader)
+        assert len(rows) == 3
+
+        assert rows[1][0] == "Dune"
+        assert rows[1][7] == "owned"
+
+        assert rows[2][0] == "Dune"
+        assert rows[2][7] == "wishlist"
