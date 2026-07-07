@@ -59,3 +59,6 @@ class ErrorMessages:
     INVALID_CURRENT_PASSWORD = "Current password is incorrect"
     BOOK_NOT_FOUND = "Book not found"
     CANNOT_MERGE_BOOK_INTO_ITSELF = "Cannot merge a book into itself"
+    PASSWORD_RESET_TOKEN_EXPIRED = "Password reset token has expired"
+    PASSWORD_RESET_TOKEN_USED = "Password reset token has already been used"
+    PASSWORD_RESET_TOKEN_INVALID = "Invalid password reset token"

@@ -43,3 +43,12 @@ def decode_token(token: str) -> dict[str, str]:
         settings.auth_settings.secret_key,
         algorithms=[settings.auth_settings.algorithm],
     )
+
+
+def create_password_reset_token(user_id: UUID) -> tuple[str, str, datetime]:
+    jti = str(uuid4())
+    expires_at = datetime.now(UTC) + timedelta(
+        minutes=settings.auth_settings.password_reset_token_expire_minutes
+    )
+    token = _encode_token(user_id, jti, expires_at)
+    return token, jti, expires_at

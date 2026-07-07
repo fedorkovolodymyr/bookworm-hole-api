@@ -19,6 +19,7 @@ from app.models.user import User
 def _login_as(user: User) -> None:
     app.dependency_overrides[get_current_user] = lambda: user
 
+
 BookWithReleases = tuple[BookModel, ISBN, ISBN]
 
 
