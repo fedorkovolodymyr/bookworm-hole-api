@@ -195,3 +195,33 @@ class TestRetrievePublicProfile:
         assert body["collections"]["total"] == 1
         names = [item["name"] for item in body["collections"]["items"]]
         assert names == ["Public Reads"]
+
+
+class TestExportAccount:
+    async def test_requires_auth(self, async_client: AsyncClient):
+        response = await async_client.get("/api/v1/users/me/export/all.json")
+        assert response.status_code == 401
+
+    async def test_returns_empty_export_for_new_user(
+        self, async_client: AsyncClient, owner: User
+    ):
+        response = await async_client.get("/api/v1/users/me/export/all.json")
+        assert response.status_code == 200
+        body = response.json()
+        assert body["export_version"] == 1
+        assert body["user"]["id"] == str(owner.id)
+        assert body["user"]["email"] == owner.email
+        assert body["user"]["username"] == owner.username
+        assert body["user"]["display_name"] == owner.display_name
+        assert body["collections"] == []
+        assert body["statuses"] == []
+        assert body["reviews"] == []
+        assert body["reading_sessions"] == []
+        assert body["friends"] == []
+
+    async def test_returns_version_field(self, async_client: AsyncClient, owner: User):
+        response = await async_client.get("/api/v1/users/me/export/all.json")
+        assert response.status_code == 200
+        body = response.json()
+        assert "export_version" in body
+        assert body["export_version"] == 1
