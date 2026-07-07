@@ -4,9 +4,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
 from app.models.user import User
+from app.repositories.reading_stats_repository import ReadingStatsRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
+from app.services.reading_stats_service import ReadingStatsService
 
 bearer_scheme = HTTPBearer()
 optional_bearer_scheme = HTTPBearer(auto_error=False)
@@ -36,3 +38,9 @@ async def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_admin:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Admin privileges required")
     return current_user
+
+
+def get_reading_stats_service(
+    session: AsyncSession = Depends(get_session),
+) -> ReadingStatsService:
+    return ReadingStatsService(ReadingStatsRepository(session))

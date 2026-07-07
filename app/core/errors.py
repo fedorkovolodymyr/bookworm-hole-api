@@ -59,3 +59,4 @@ class ErrorMessages:
     INVALID_CURRENT_PASSWORD = "Current password is incorrect"
     BOOK_NOT_FOUND = "Book not found"
     CANNOT_MERGE_BOOK_INTO_ITSELF = "Cannot merge a book into itself"
+    INVALID_DATE_RANGE = "from_date must be before or equal to to_date"
