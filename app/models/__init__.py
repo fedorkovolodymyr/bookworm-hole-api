@@ -14,6 +14,7 @@ from app.models.collection import Collection, CollectionItem
 from app.models.contribution import Contribution, ContributionKind, ContributionStatus
 from app.models.external_source import ExternalRefKind, ExternalSourceRecord
 from app.models.friendship import Friendship, FriendshipStatus
+from app.models.google_integration import GoogleIntegration
 from app.models.mixins import IdMixin, TimestampMixin
 from app.models.reading_session import PositionUnit, ReadingSession
 from app.models.refresh_token import RefreshToken
@@ -37,6 +38,7 @@ __all__ = [
     "ExternalSourceRecord",
     "Friendship",
     "FriendshipStatus",
+    "GoogleIntegration",
     "ISBNKind",
     "IdMixin",
     "PositionUnit",

@@ -12,3 +12,11 @@ ADMIN_RESPONSES: dict[int | str, dict[str, Any]] = {
 CONFLICT_RESPONSE: dict[int | str, dict[str, Any]] = {
     409: {"description": "Request conflicts with the current state of the resource"},
 }
+
+UNAUTHORIZED_RESPONSE: dict[int | str, dict[str, Any]] = {
+    401: {"description": "Missing, invalid, or expired credentials"},
+}
+
+EXTERNAL_SERVICE_RESPONSE: dict[int | str, dict[str, Any]] = {
+    502: {"description": "Upstream service request failed"},
+}

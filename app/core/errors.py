@@ -59,3 +59,8 @@ class ErrorMessages:
     INVALID_CURRENT_PASSWORD = "Current password is incorrect"
     BOOK_NOT_FOUND = "Book not found"
     CANNOT_MERGE_BOOK_INTO_ITSELF = "Cannot merge a book into itself"
+    GOOGLE_INTEGRATION_NOT_FOUND = "Google integration not found"
+    INVALID_OAUTH_STATE = "Invalid or expired OAuth state"
+    GOOGLE_OAUTH_DENIED = "Google OAuth authorization was denied"
+    GOOGLE_TOKEN_EXCHANGE_FAILED = "Failed to exchange Google OAuth code for tokens"
+    GOOGLE_TOKEN_REFRESH_FAILED = "Failed to refresh Google OAuth access token"
