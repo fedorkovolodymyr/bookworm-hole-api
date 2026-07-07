@@ -5,7 +5,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, or_, select
 
-from app.models.catalog import ISBN, Release
+from app.models.catalog import ISBN, ContributorRole, Release, ReleaseContributor
 from app.repositories.loading import eager
 from app.schemas.book_schemas import UpdateReleaseSchema
 
@@ -63,3 +63,39 @@ class ReleaseRepository:
         release.last_external_sync_at = synced_at
         self.session.add(release)
         await self.session.commit()
+
+    async def add_contributor(
+        self, release_id: UUID, contributor_id: UUID, role: ContributorRole
+    ) -> bool:
+        """Add a contributor to a release with a specific role. Returns True if newly
+        created, False if the link already existed.
+        """
+        existing = await self.session.get(
+            ReleaseContributor,
+            (release_id, contributor_id, role),
+        )
+        if existing is not None:
+            return False
+
+        link = ReleaseContributor(
+            release_id=release_id, contributor_id=contributor_id, role=role
+        )
+        self.session.add(link)
+        await self.session.commit()
+        return True
+
+    async def remove_contributor(
+        self, release_id: UUID, contributor_id: UUID, role: ContributorRole
+    ) -> bool:
+        """Remove a contributor from a release. Returns True if deleted, False if
+        not found."""
+        existing = await self.session.get(
+            ReleaseContributor,
+            (release_id, contributor_id, role),
+        )
+        if existing is None:
+            return False
+
+        await self.session.delete(existing)
+        await self.session.commit()
+        return True

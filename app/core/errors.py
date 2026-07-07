@@ -58,6 +58,7 @@ class ErrorMessages:
     CONTRIBUTOR_NOT_FOUND = "Contributor not found"
     INVALID_CURRENT_PASSWORD = "Current password is incorrect"
     BOOK_NOT_FOUND = "Book not found"
+    RELEASE_NOT_FOUND = "Release not found"
     CANNOT_MERGE_BOOK_INTO_ITSELF = "Cannot merge a book into itself"
     CONTRIBUTION_NOT_FOUND = "Contribution not found"
     CONTRIBUTION_NOT_DRAFT = "Contribution must be in draft state to edit"

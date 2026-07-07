@@ -15,6 +15,7 @@ from app.schemas.book_schemas import (
     UpdateBookSchema,
 )
 from app.schemas.common_schemas import Page
+from app.schemas.contributor_schemas import AddContributorSchema
 from app.schemas.review_schemas import ReviewResponse
 from app.services.book_service import BookService
 from app.services.review_service import ReviewService
@@ -115,6 +116,43 @@ async def merge_book(
     rolls back the whole merge.
     """
     return await service.merge_books(source_id, target_id)
+
+
+@books_router.post(
+    "/{book_id}/contributors",
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_admin)],
+    responses=ADMIN_RESPONSES | NOT_FOUND_RESPONSE,
+)
+async def add_book_contributor(
+    book_id: UUID,
+    payload: AddContributorSchema,
+    service: BookService = Depends(get_book_service),
+) -> dict[str, str]:
+    """Add a contributor to a book. Returns 200 if already existed, 201 if newly
+    created."""
+    created = await service.add_contributor(
+        book_id, payload.contributor_id, payload.role
+    )
+    return {"status": "created" if created else "already_existed"}
+
+
+@books_router.delete(
+    "/{book_id}/contributors/{contributor_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_admin)],
+    responses=ADMIN_RESPONSES | NOT_FOUND_RESPONSE,
+)
+async def remove_book_contributor(
+    book_id: UUID,
+    contributor_id: UUID,
+    role: str,
+    service: BookService = Depends(get_book_service),
+) -> None:
+    from app.models.catalog import ContributorRole
+
+    role_enum = ContributorRole(role)
+    await service.remove_contributor(book_id, contributor_id, role_enum)
 
 
 @books_router.get("/{book_id}/reviews", response_model=Page[ReviewResponse])

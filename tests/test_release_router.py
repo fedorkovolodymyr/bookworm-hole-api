@@ -3,6 +3,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.catalog import Book as BookModel
+from app.models.catalog import Contributor as ContributorModel
 from app.models.catalog import Release, ReleaseFormat
 
 
@@ -196,3 +197,145 @@ class TestModifyRelease:
         }
         for name, original_value in original.items():
             assert data[name] == (value if name == field else original_value)
+
+
+class TestReleaseContributors:
+    async def test_add_contributor_requires_admin(
+        self, async_client: AsyncClient, book_with_release: tuple[BookModel, Release]
+    ):
+        _, release = book_with_release
+        response = await async_client.post(
+            f"/api/v1/releases/{release.id}/contributors",
+            json={
+                "contributor_id": "00000000-0000-0000-0000-000000000000",
+                "role": "narrator",
+            },
+        )
+        assert response.status_code == 401
+
+    async def test_add_contributor_forbidden_for_non_admin(
+        self, reader_client: AsyncClient, book_with_release: tuple[BookModel, Release]
+    ):
+        _, release = book_with_release
+        response = await reader_client.post(
+            f"/api/v1/releases/{release.id}/contributors",
+            json={
+                "contributor_id": "00000000-0000-0000-0000-000000000000",
+                "role": "narrator",
+            },
+        )
+        assert response.status_code == 403
+
+    async def test_add_contributor_release_not_found(self, admin_client: AsyncClient):
+        response = await admin_client.post(
+            "/api/v1/releases/00000000-0000-0000-0000-000000000000/contributors",
+            json={
+                "contributor_id": "00000000-0000-0000-0000-000000000000",
+                "role": "narrator",
+            },
+        )
+        assert response.status_code == 404
+
+    async def test_add_contributor_contributor_not_found(
+        self, admin_client: AsyncClient, book_with_release: tuple[BookModel, Release]
+    ):
+        _, release = book_with_release
+        response = await admin_client.post(
+            f"/api/v1/releases/{release.id}/contributors",
+            json={
+                "contributor_id": "00000000-0000-0000-0000-000000000000",
+                "role": "narrator",
+            },
+        )
+        assert response.status_code == 404
+
+    async def test_add_contributor_success(
+        self,
+        admin_client: AsyncClient,
+        db_session: AsyncSession,
+        book_with_release: tuple[BookModel, Release],
+    ):
+        _, release = book_with_release
+        contributor = ContributorModel(
+            full_name="George Guidall",
+            sort_name="Guidall, George",
+            slug="george-guidall",
+        )
+        db_session.add(contributor)
+        await db_session.commit()
+        await db_session.refresh(contributor)
+
+        response = await admin_client.post(
+            f"/api/v1/releases/{release.id}/contributors",
+            json={"contributor_id": str(contributor.id), "role": "narrator"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "created"
+
+    async def test_add_contributor_idempotent(
+        self,
+        admin_client: AsyncClient,
+        db_session: AsyncSession,
+        book_with_release: tuple[BookModel, Release],
+    ):
+        _, release = book_with_release
+        contributor = ContributorModel(
+            full_name="George Guidall",
+            sort_name="Guidall, George",
+            slug="george-guidall",
+        )
+        db_session.add(contributor)
+        await db_session.commit()
+        await db_session.refresh(contributor)
+
+        response1 = await admin_client.post(
+            f"/api/v1/releases/{release.id}/contributors",
+            json={"contributor_id": str(contributor.id), "role": "narrator"},
+        )
+        assert response1.status_code == 200
+        assert response1.json()["status"] == "created"
+
+        response2 = await admin_client.post(
+            f"/api/v1/releases/{release.id}/contributors",
+            json={"contributor_id": str(contributor.id), "role": "narrator"},
+        )
+        assert response2.status_code == 200
+        assert response2.json()["status"] == "already_existed"
+
+    async def test_remove_contributor_success(
+        self,
+        admin_client: AsyncClient,
+        db_session: AsyncSession,
+        book_with_release: tuple[BookModel, Release],
+    ):
+        _, release = book_with_release
+        contributor = ContributorModel(
+            full_name="George Guidall",
+            sort_name="Guidall, George",
+            slug="george-guidall",
+        )
+        db_session.add(contributor)
+        await db_session.commit()
+        await db_session.refresh(contributor)
+
+        await admin_client.post(
+            f"/api/v1/releases/{release.id}/contributors",
+            json={"contributor_id": str(contributor.id), "role": "narrator"},
+        )
+
+        response = await admin_client.delete(
+            f"/api/v1/releases/{release.id}/contributors/{contributor.id}?role=narrator"
+        )
+
+        assert response.status_code == 204
+
+    async def test_remove_contributor_not_found(
+        self, admin_client: AsyncClient, book_with_release: tuple[BookModel, Release]
+    ):
+        _, release = book_with_release
+        response = await admin_client.delete(
+            f"/api/v1/releases/{release.id}/contributors/00000000-0000-0000-0000-000000000000?role=narrator"
+        )
+        assert response.status_code == 404
