@@ -9,7 +9,7 @@ from sqlmodel import col, select
 
 from app.models.book_status import BookStatus, BookStatusKind
 from app.models.catalog import Book, Release
-from app.repositories.loading import eager
+from app.repositories.loading import eager_nested
 from app.schemas.book_status_schemas import UpdateBookStatusSchema
 
 BookStatusSort = Literal["acquired_at", "title"]
@@ -45,8 +45,11 @@ class BookStatusRepository:
             select(BookStatus)
             .where(col(BookStatus.user_id) == user_id)
             .options(
-                eager(BookStatus.book),
-                eager(BookStatus.release),
+                eager_nested(BookStatus.book, Book.releases),
+                eager_nested(BookStatus.book, Book.contributors),
+                eager_nested(BookStatus.release, Release.book),
+                eager_nested(BookStatus.release, Release.isbns),
+                eager_nested(BookStatus.release, Release.contributors),
             )
         )
         result = await self.session.execute(query)

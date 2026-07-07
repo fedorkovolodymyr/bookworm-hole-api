@@ -1,18 +1,13 @@
-from __future__ import annotations
-
 import enum
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
 
 from sqlalchemy import CheckConstraint, Column, DateTime, Index
 from sqlalchemy import Enum as SAEnum
 from sqlmodel import Field, Relationship, SQLModel
 
+from app.models.catalog import Book, Release
 from app.models.mixins import IdMixin, TimestampMixin
-
-if TYPE_CHECKING:
-    from app.models.catalog import Book, Release
 
 
 class BookStatusKind(str, enum.Enum):

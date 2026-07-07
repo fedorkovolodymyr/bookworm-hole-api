@@ -153,12 +153,17 @@ class BookStatusService:
                 if release.isbns:
                     isbn = release.isbns[0].code_normalized if release.isbns else ""
 
-                contributors = release.contributors if release.contributors else []
-                author_names = [
+                book_contributors = (
+                    release.book.contributors
+                    if release.book and release.book.contributors
+                    else []
+                )
+                contributors = [*book_contributors, *(release.contributors or [])]
+                author_names = dict.fromkeys(
                     c.full_name
                     for c in contributors
                     if c and hasattr(c, "full_name") and c.full_name
-                ]
+                )
                 authors = "; ".join(author_names)
             elif book:
                 book_title = book.title if book.title else ""

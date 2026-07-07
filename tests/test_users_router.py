@@ -11,7 +11,13 @@ from app.core.deps import get_current_user
 from app.main import app
 from app.models.book_status import BookStatus, BookStatusKind
 from app.models.catalog import Book as BookModel
-from app.models.catalog import Contributor, Release, ReleaseFormat
+from app.models.catalog import (
+    BookContributor,
+    Contributor,
+    ContributorRole,
+    Release,
+    ReleaseFormat,
+)
 from app.models.collection import Collection
 from app.models.user import User
 from app.services.security import hash_password, verify_password
@@ -227,10 +233,15 @@ async def book_with_release(db_session: AsyncSession) -> BookModel:
     db_session.add(contributor)
     await db_session.flush()
 
-    book.contributors.append(contributor)
-    db_session.add(book)
+    db_session.add(
+        BookContributor(
+            book_id=book.id,
+            contributor_id=contributor.id,
+            role=ContributorRole.author,
+        )
+    )
     await db_session.commit()
-    await db_session.refresh(book)
+    await db_session.refresh(book, attribute_names=["releases", "contributors"])
     return book
 
 
