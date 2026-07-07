@@ -59,3 +59,8 @@ class ErrorMessages:
     INVALID_CURRENT_PASSWORD = "Current password is incorrect"
     BOOK_NOT_FOUND = "Book not found"
     CANNOT_MERGE_BOOK_INTO_ITSELF = "Cannot merge a book into itself"
+    CONTRIBUTION_NOT_FOUND = "Contribution not found"
+    CONTRIBUTION_NOT_DRAFT = "Contribution must be in draft state to edit"
+    CONTRIBUTION_CANNOT_DELETE = (
+        "Contribution can only be deleted while in draft or submitted state"
+    )
