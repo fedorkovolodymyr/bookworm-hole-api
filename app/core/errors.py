@@ -65,3 +65,6 @@ class ErrorMessages:
     CONTRIBUTION_CANNOT_DELETE = (
         "Contribution can only be deleted while in draft or submitted state"
     )
+    READING_SESSION_NOT_FOUND = "Reading session not found"
+    READING_SESSION_ALREADY_ACTIVE = "Reading session already active for this release"
+    READING_SESSION_NOT_ACTIVE = "No active reading session for this release"
