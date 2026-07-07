@@ -138,3 +138,74 @@ async def import_bookshelf_library(
         column_mapping=column_mapping,
         source_type="bookshelf",
     )
+
+
+@users_router.post("/me/import/csv", response_model=ImportReportSchema)
+async def import_generic_csv(
+    file: UploadFile,
+    title_col: str = "title",
+    author_col: str = "author",
+    isbn_col: str = "isbn",
+    status_col: str = "status",
+    date_added_col: str = "date_added",
+    current_user: User = Depends(get_current_user),
+    service: ImportService = Depends(get_import_service),
+):
+    """Import library from generic CSV with configurable column mapping."""
+    content = await file.read()
+    text = content.decode("utf-8")
+    reader = csv.DictReader(io.StringIO(text))
+
+    if not reader.fieldnames:
+        from app.core.errors import AppError
+
+        raise AppError("Invalid CSV format")
+
+    rows = list(reader)
+    column_mapping = {
+        "title": title_col,
+        "author": author_col,
+        "isbn": isbn_col,
+        "status": status_col,
+        "date_added": date_added_col,
+    }
+
+    return await service.import_rows(
+        user_id=current_user.id,
+        rows=rows,
+        column_mapping=column_mapping,
+        source_type="csv",
+    )
+
+
+@users_router.post("/me/import/goodreads", response_model=ImportReportSchema)
+async def import_goodreads_library(
+    file: UploadFile,
+    current_user: User = Depends(get_current_user),
+    service: ImportService = Depends(get_import_service),
+):
+    """Import library from Goodreads export CSV."""
+    content = await file.read()
+    text = content.decode("utf-8")
+    reader = csv.DictReader(io.StringIO(text))
+
+    if not reader.fieldnames:
+        from app.core.errors import AppError
+
+        raise AppError("Invalid CSV format")
+
+    rows = list(reader)
+    column_mapping = {
+        "title": "Title",
+        "author": "Author",
+        "isbn": "ISBN",
+        "status": "Exclusive Shelf",
+        "date_added": "Date Read",
+    }
+
+    return await service.import_rows(
+        user_id=current_user.id,
+        rows=rows,
+        column_mapping=column_mapping,
+        source_type="goodreads",
+    )
