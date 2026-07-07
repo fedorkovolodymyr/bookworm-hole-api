@@ -1,15 +1,22 @@
+import csv
+import io
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
 from app.core.deps import get_current_user
 from app.models.user import User
+from app.repositories.book_repository import BookRepository
+from app.repositories.book_status_repository import BookStatusRepository
 from app.repositories.collection_repository import CollectionRepository
+from app.repositories.contributor_repository import ContributorRepository
+from app.repositories.import_repository import ImportRepository
 from app.repositories.review_repository import ReviewRepository, ReviewSort
 from app.repositories.user_repository import UserRepository
 from app.schemas.common_schemas import Page
+from app.schemas.import_schemas import ImportReportSchema
 from app.schemas.review_schemas import ReviewResponse
 from app.schemas.user_schemas import (
     ChangePasswordSchema,
@@ -17,6 +24,7 @@ from app.schemas.user_schemas import (
     UpdateUserSchema,
     UserProfileResponse,
 )
+from app.services.import_service import ImportService
 from app.services.review_service import ReviewService
 from app.services.user_service import UserService
 
@@ -31,6 +39,16 @@ def get_review_service(
 
 def get_user_service(session: AsyncSession = Depends(get_session)) -> UserService:
     return UserService(UserRepository(session), CollectionRepository(session))
+
+
+def get_import_service(session: AsyncSession = Depends(get_session)) -> ImportService:
+    return ImportService(
+        session,
+        BookRepository(session),
+        ContributorRepository(session),
+        ImportRepository(session),
+        BookStatusRepository(session),
+    )
 
 
 @users_router.get("/me", response_model=UserProfileResponse)
@@ -87,3 +105,36 @@ async def retrieve_user_reviews(
 ):
     """List a user's public reviews."""
     return await service.list_public_for_user(user_id, sort, skip, limit)
+
+
+@users_router.post("/me/import/bookshelf", response_model=ImportReportSchema)
+async def import_bookshelf_library(
+    file: UploadFile,
+    current_user: User = Depends(get_current_user),
+    service: ImportService = Depends(get_import_service),
+):
+    """Import library from Bookshelf app export CSV."""
+    content = await file.read()
+    text = content.decode("utf-8")
+    reader = csv.DictReader(io.StringIO(text))
+
+    if not reader.fieldnames:
+        from app.core.errors import AppError
+
+        raise AppError("Invalid CSV format")
+
+    rows = list(reader)
+    column_mapping = {
+        "title": "title",
+        "author": "author",
+        "isbn": "isbn",
+        "status": "status",
+        "date_added": "date_added",
+    }
+
+    return await service.import_rows(
+        user_id=current_user.id,
+        rows=rows,
+        column_mapping=column_mapping,
+        source_type="bookshelf",
+    )

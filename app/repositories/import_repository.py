@@ -4,6 +4,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
+from app.models.book_status import BookStatus
 from app.models.catalog import (
     ISBN,
     Book,
@@ -14,6 +15,7 @@ from app.models.catalog import (
     ReleaseContributor,
     ReleaseFormat,
 )
+from app.models.import_record import ImportRecord
 from app.repositories.loading import eager, eager_nested
 
 
@@ -126,3 +128,41 @@ class ImportRepository:
             )
         )
         await self.session.flush()
+
+    async def find_existing_status(
+        self, user_id: UUID, book_id: UUID | None, release_id: UUID | None
+    ) -> BookStatus | None:
+        result = await self.session.execute(
+            select(BookStatus)
+            .where(col(BookStatus.user_id) == user_id)
+            .where(col(BookStatus.book_id) == book_id)
+            .where(col(BookStatus.release_id) == release_id)
+        )
+        return result.scalars().first()
+
+    async def create_import_record(
+        self,
+        user_id: UUID,
+        file_hash: str,
+        row_count: int,
+        source_type: str,
+    ) -> ImportRecord:
+        record = ImportRecord(
+            user_id=user_id,
+            file_hash=file_hash,
+            row_count=row_count,
+            source_type=source_type,
+        )
+        self.session.add(record)
+        await self.session.flush()
+        return record
+
+    async def get_import_record_by_hash(
+        self, user_id: UUID, file_hash: str
+    ) -> ImportRecord | None:
+        result = await self.session.execute(
+            select(ImportRecord)
+            .where(col(ImportRecord.user_id) == user_id)
+            .where(col(ImportRecord.file_hash) == file_hash)
+        )
+        return result.scalars().first()
