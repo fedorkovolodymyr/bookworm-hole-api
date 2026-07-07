@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -57,6 +58,16 @@ class UserRepository:
         if not user:
             return None
         user.is_active = False
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+    async def mark_email_verified(self, user_id: UUID) -> User | None:
+        user = await self.session.get(User, user_id)
+        if not user:
+            return None
+        user.email_verified_at = datetime.now(UTC)
         self.session.add(user)
         await self.session.commit()
         await self.session.refresh(user)
