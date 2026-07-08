@@ -1,8 +1,10 @@
 from fastapi import APIRouter
 
+from app.routers.admin_contributions import admin_contributions_router
 from app.routers.auth import auth_router
 from app.routers.books import books_router
 from app.routers.collections import collections_router
+from app.routers.contributions import contributions_router
 from app.routers.contributors import contributors_router
 from app.routers.external import external_router
 from app.routers.friends import friends_router
@@ -19,6 +21,7 @@ api_v1.include_router(health_router)
 api_v1.include_router(books_router)
 api_v1.include_router(releases_router)
 api_v1.include_router(contributors_router)
+api_v1.include_router(contributions_router)
 api_v1.include_router(auth_router)
 api_v1.include_router(statuses_router)
 api_v1.include_router(status_views_router)
@@ -27,3 +30,4 @@ api_v1.include_router(external_router)
 api_v1.include_router(friends_router)
 api_v1.include_router(reviews_router)
 api_v1.include_router(users_router)
+api_v1.include_router(admin_contributions_router)

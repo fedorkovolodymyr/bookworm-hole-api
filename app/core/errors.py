@@ -58,4 +58,15 @@ class ErrorMessages:
     CONTRIBUTOR_NOT_FOUND = "Contributor not found"
     INVALID_CURRENT_PASSWORD = "Current password is incorrect"
     BOOK_NOT_FOUND = "Book not found"
+    RELEASE_NOT_FOUND = "Release not found"
     CANNOT_MERGE_BOOK_INTO_ITSELF = "Cannot merge a book into itself"
+    CONTRIBUTION_NOT_FOUND = "Contribution not found"
+    CONTRIBUTION_NOT_DRAFT = "Contribution must be in draft state to edit"
+    CONTRIBUTION_CANNOT_DELETE = (
+        "Contribution can only be deleted while in draft or submitted state"
+    )
+    CONTRIBUTION_NOT_SUBMITTED = "Contribution must be in submitted state"
+    CONTRIBUTION_NOT_UNDER_REVIEW = "Contribution must be under review"
+    READING_SESSION_NOT_FOUND = "Reading session not found"
+    READING_SESSION_ALREADY_ACTIVE = "Reading session already active for this release"
+    READING_SESSION_NOT_ACTIVE = "No active reading session for this release"
