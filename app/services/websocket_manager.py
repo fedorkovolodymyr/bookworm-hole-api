@@ -123,3 +123,6 @@ class WebSocketConnectionManager:
 
         self.thread_connections.clear()
         self.connection_meta.clear()
+
+
+websocket_manager = WebSocketConnectionManager()

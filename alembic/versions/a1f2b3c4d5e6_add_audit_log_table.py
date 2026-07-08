@@ -22,12 +22,8 @@ depends_on: str | Sequence[str] | None = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    op.execute(
-        "CREATE TYPE auditaction AS ENUM ('approve_contribution', 'reject_contribution', 'claim_contribution', 'activate_user', 'deactivate_user', 'promote_user', 'demote_user')"
-    )
-    op.execute("CREATE TYPE audittargettype AS ENUM ('contribution', 'user')")
     op.create_table(
-        "audit_log",
+        "auditlog",
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("actor_id", sa.Uuid(), nullable=False),
         sa.Column(
@@ -63,21 +59,21 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index(
-        op.f("ix_audit_log_actor_id"), "audit_log", ["actor_id"], unique=False
+        op.f("ix_auditlog_actor_id"), "auditlog", ["actor_id"], unique=False
     )
     op.create_index(
-        op.f("ix_audit_log_target_id"), "audit_log", ["target_id"], unique=False
+        op.f("ix_auditlog_target_id"), "auditlog", ["target_id"], unique=False
     )
     op.create_index(
-        op.f("ix_audit_log_created_at"), "audit_log", ["created_at"], unique=False
+        op.f("ix_auditlog_created_at"), "auditlog", ["created_at"], unique=False
     )
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_index(op.f("ix_audit_log_created_at"), table_name="audit_log")
-    op.drop_index(op.f("ix_audit_log_target_id"), table_name="audit_log")
-    op.drop_index(op.f("ix_audit_log_actor_id"), table_name="audit_log")
-    op.drop_table("audit_log")
+    op.drop_index(op.f("ix_auditlog_created_at"), table_name="auditlog")
+    op.drop_index(op.f("ix_auditlog_target_id"), table_name="auditlog")
+    op.drop_index(op.f("ix_auditlog_actor_id"), table_name="auditlog")
+    op.drop_table("auditlog")
     sa.Enum(name="audittargettype").drop(op.get_bind(), checkfirst=True)
     sa.Enum(name="auditaction").drop(op.get_bind(), checkfirst=True)

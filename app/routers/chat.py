@@ -8,7 +8,6 @@ from fastapi import (
     APIRouter,
     Depends,
     Query,
-    Request,
     WebSocket,
     WebSocketDisconnect,
     status,
@@ -31,7 +30,7 @@ from app.schemas.chat_schemas import (
     StartChatThreadSchema,
 )
 from app.services.chat_service import ChatService
-from app.services.websocket_manager import WebSocketConnectionManager
+from app.services.websocket_manager import websocket_manager
 
 chat_router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -102,14 +101,12 @@ async def get_thread_messages(
 async def send_message_to_thread(
     thread_id: UUID,
     data: SendChatMessageSchema,
-    request: Request,
     current_user: User = Depends(get_current_user),
     service: ChatService = Depends(get_chat_service),
 ):
     """Send a message to an existing thread."""
     message = await service.send_message_to_thread(thread_id, current_user.id, data)
-    manager: WebSocketConnectionManager = request.app.state.websocket_manager
-    await manager.broadcast(
+    await websocket_manager.broadcast(
         thread_id, ChatMessageResponse.model_validate(message).model_dump(mode="json")
     )
     return message
@@ -184,7 +181,6 @@ async def websocket_endpoint(
     Broadcasts messages sent via `POST /chat/threads/{thread_id}/messages` to
     both participants. Sends a heartbeat ping every 30 seconds.
     """
-    manager: WebSocketConnectionManager = websocket.app.state.websocket_manager
     heartbeat_task: asyncio.Task[Any] | None = None
 
     await websocket.accept()
@@ -201,22 +197,22 @@ async def websocket_endpoint(
             return
 
     try:
-        await manager.connect(websocket, thread_id, user_id)
+        await websocket_manager.connect(websocket, thread_id, user_id)
         heartbeat_task = asyncio.create_task(
-            manager.heartbeat_loop(websocket, interval=30)
+            websocket_manager.heartbeat_loop(websocket, interval=30)
         )
 
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
             if message.get("type") == "heartbeat":
-                await manager.send_heartbeat(websocket)
+                await websocket_manager.send_heartbeat(websocket)
 
     except WebSocketDisconnect:
         logger.debug(f"WebSocket disconnected: thread_id={thread_id}")
     except json.JSONDecodeError:
         logger.debug("Invalid JSON received on WebSocket")
     finally:
-        await manager.disconnect(websocket)
+        await websocket_manager.disconnect(websocket)
         if heartbeat_task:
             heartbeat_task.cancel()

@@ -54,10 +54,10 @@ class TestWebSocketConnectionManager:
         user_id2 = uuid.uuid4()
 
         ws1 = Mock()
-        ws1.accept = Mock(return_value=None)
+        ws1.accept = AsyncMock()
         ws1.send_text = AsyncMock()
         ws2 = Mock()
-        ws2.accept = Mock(return_value=None)
+        ws2.accept = AsyncMock()
         ws2.send_text = AsyncMock()
 
         await manager.connect(ws1, thread_id, user_id1)
@@ -124,6 +124,7 @@ class TestWebSocketConnectionManager:
         manager._heartbeat_tasks.add(task2)
 
         await manager.shutdown()
+        await asyncio.sleep(0)
 
         assert task1.cancelled()
         assert task2.cancelled()
@@ -157,10 +158,10 @@ class TestWebSocketConnectionManager:
         user_id = uuid.uuid4()
 
         ws1 = Mock()
-        ws1.accept = Mock(return_value=None)
+        ws1.accept = AsyncMock()
         ws1.send_text = AsyncMock()
         ws2 = Mock()
-        ws2.accept = Mock(return_value=None)
+        ws2.accept = AsyncMock()
         ws2.send_text = AsyncMock()
 
         await manager.connect(ws1, thread1, user_id)
