@@ -6,6 +6,7 @@ from loguru import logger
 from app.core.config import get_settings
 from app.core.db import async_engine
 from app.core.logging import configure_logging
+from app.services.websocket_manager import websocket_manager
 
 
 def _init_sentry() -> None:
@@ -31,6 +32,7 @@ async def lifespan(app: FastAPI):
     yield
     logger.info("Shutting down application...")
     try:
+        await websocket_manager.shutdown()
         await async_engine.dispose()
     finally:
         logger.remove(sink_id)

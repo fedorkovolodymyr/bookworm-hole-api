@@ -1,0 +1,2052 @@
+[
+  {
+    "title": "The Great Gatsby",
+    "description": "A classic American novel set in the Jazz Age, exploring themes of love, wealth, and the American Dream.",
+    "first_publication_year": 1925,
+    "original_title": "The Great Gatsby",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "F. Scott Fitzgerald",
+        "sort_name": "Fitzgerald, F. Scott",
+        "slug": "f-scott-fitzgerald",
+        "role": "author",
+        "bio": "American novelist known for works of the Jazz Age."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Scribner",
+        "published_year": 1925,
+        "language": "en",
+        "page_count": 180,
+        "isbns": [
+          {
+            "code": "978-0-7432-7356-5",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0743273567",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Penguin Classics",
+        "published_year": 2006,
+        "language": "en",
+        "page_count": 189,
+        "isbns": [
+          {
+            "code": "978-0-14-118479-3",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0141184791",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Scribner",
+        "published_year": 2014,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-1-4391-2735-7",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "To Kill a Mockingbird",
+    "description": "A gripping tale of racial injustice and childhood innocence in the American South.",
+    "first_publication_year": 1960,
+    "original_title": "To Kill a Mockingbird",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Harper Lee",
+        "sort_name": "Lee, Harper",
+        "slug": "harper-lee",
+        "role": "author",
+        "bio": "American novelist who won the Pulitzer Prize."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "J. B. Lippincott & Co.",
+        "published_year": 1960,
+        "language": "en",
+        "page_count": 324,
+        "isbns": [
+          {
+            "code": "978-0-06-112008-4",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0061120081",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Harper Perennial Modern Classics",
+        "published_year": 2006,
+        "language": "en",
+        "page_count": 281,
+        "isbns": [
+          {
+            "code": "978-0-06-085052-4",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0060850523",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Harper Perennial",
+        "published_year": 2018,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-0-06-272275-6",
+            "kind": "isbn13"
+          }
+        ]
+      },
+      {
+        "format": "audiobook",
+        "publisher": "HarperAudio",
+        "published_year": 2018,
+        "language": "en",
+        "duration_minutes": 480,
+        "isbns": [
+          {
+            "code": "978-0-06-283447-2",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "1984",
+    "description": "A dystopian novel depicting a totalitarian regime and the oppression of individual thought.",
+    "first_publication_year": 1949,
+    "original_title": "1984",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "George Orwell",
+        "sort_name": "Orwell, George",
+        "slug": "george-orwell",
+        "role": "author",
+        "bio": "English novelist and political commentator."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Secker & Warburg",
+        "published_year": 1949,
+        "language": "en",
+        "page_count": 328,
+        "isbns": [
+          {
+            "code": "978-0-452-26236-6",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0452262366",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Signet Classics",
+        "published_year": 2008,
+        "language": "en",
+        "page_count": 400,
+        "isbns": [
+          {
+            "code": "978-0-451-52493-2",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0451524934",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Penguin Books",
+        "published_year": 2017,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-0-14-190671-8",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Pride and Prejudice",
+    "description": "A romantic novel of manners exploring love, marriage, and social class in Georgian England.",
+    "first_publication_year": 1813,
+    "original_title": "Pride and Prejudice",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Jane Austen",
+        "sort_name": "Austen, Jane",
+        "slug": "jane-austen",
+        "role": "author",
+        "bio": "English author known for romantic fiction."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Dover Publications",
+        "published_year": 1992,
+        "language": "en",
+        "page_count": 279,
+        "isbns": [
+          {
+            "code": "978-0-486-27473-2",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0486274734",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Penguin Classics",
+        "published_year": 1996,
+        "language": "en",
+        "page_count": 432,
+        "isbns": [
+          {
+            "code": "978-0-14-043725-8",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0140437258",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "The Catcher in the Rye",
+    "description": "A coming-of-age novel following a teenager navigating adolescence and alienation in New York City.",
+    "first_publication_year": 1951,
+    "original_title": "The Catcher in the Rye",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "J. D. Salinger",
+        "sort_name": "Salinger, J. D.",
+        "slug": "j-d-salinger",
+        "role": "author",
+        "bio": "American novelist and short-story writer."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Little, Brown and Company",
+        "published_year": 1951,
+        "language": "en",
+        "page_count": 277,
+        "isbns": [
+          {
+            "code": "978-0-316-76948-0",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0316769482",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Back Bay Books",
+        "published_year": 2004,
+        "language": "en",
+        "page_count": 277,
+        "isbns": [
+          {
+            "code": "978-0-316-76949-7",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0316769490",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "The Library of Babel",
+    "description": "A short story conceiving of a universe as a vast, incomprehensible library.",
+    "first_publication_year": 1941,
+    "original_title": "La biblioteca de Babel",
+    "original_language": "es",
+    "contributors": [
+      {
+        "full_name": "Jorge Luis Borges",
+        "sort_name": "Borges, Jorge Luis",
+        "slug": "jorge-luis-borges",
+        "role": "author",
+        "bio": "Argentine short-story writer, essayist, and poet."
+      }
+    ],
+    "releases": [
+      {
+        "format": "paperback",
+        "publisher": "Penguin Classics",
+        "published_year": 2000,
+        "language": "en",
+        "page_count": 160,
+        "isbns": [
+          {
+            "code": "978-0-14-118178-5",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0141181788",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Penguin Classics",
+        "published_year": 2010,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-0-14-191836-0",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Notes on the Analytical Engine",
+    "description": "Notes describing an algorithm for the Analytical Engine, pioneering computer science.",
+    "first_publication_year": 1843,
+    "original_title": "Notes on the Analytical Engine",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Ada Lovelace",
+        "sort_name": "Lovelace, Ada",
+        "slug": "ada-lovelace",
+        "role": "author",
+        "bio": "Mathematician and writer, known for work on Babbage's Analytical Engine."
+      }
+    ],
+    "releases": [
+      {
+        "format": "paperback",
+        "publisher": "Dover Publications",
+        "published_year": 1998,
+        "language": "en",
+        "page_count": 160,
+        "isbns": [
+          {
+            "code": "978-0-486-43061-9",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0486430612",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Feedbooks",
+        "published_year": 2008,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-0-9853456-6-7",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Wuthering Heights",
+    "description": "A gothic romance set in the Yorkshire moors, exploring passionate love and destructive revenge.",
+    "first_publication_year": 1847,
+    "original_title": "Wuthering Heights",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Emily Bront\u00eb",
+        "sort_name": "Bront\u00eb, Emily",
+        "slug": "emily-bronte",
+        "role": "author",
+        "bio": "English novelist known for her single novel Wuthering Heights."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Dover Publications",
+        "published_year": 2001,
+        "language": "en",
+        "page_count": 368,
+        "isbns": [
+          {
+            "code": "978-0-486-42138-8",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0486421384",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Penguin Classics",
+        "published_year": 1994,
+        "language": "en",
+        "page_count": 448,
+        "isbns": [
+          {
+            "code": "978-0-14-143959-1",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0141439599",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Jane Eyre",
+    "description": "A gothic romance and bildungsroman following an orphaned governess seeking independence and love.",
+    "first_publication_year": 1847,
+    "original_title": "Jane Eyre",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Charlotte Bront\u00eb",
+        "sort_name": "Bront\u00eb, Charlotte",
+        "slug": "charlotte-bronte",
+        "role": "author",
+        "bio": "English novelist known for romantic fiction."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Dover Publications",
+        "published_year": 1996,
+        "language": "en",
+        "page_count": 448,
+        "isbns": [
+          {
+            "code": "978-0-486-42449-5",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0486424499",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Penguin Classics",
+        "published_year": 2006,
+        "language": "en",
+        "page_count": 544,
+        "isbns": [
+          {
+            "code": "978-0-14-143951-5",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0141439513",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Penguin",
+        "published_year": 2016,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-0-14-191753-0",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Moby-Dick",
+    "description": "An epic tale of a sea captain's obsessive quest to hunt a legendary white whale.",
+    "first_publication_year": 1851,
+    "original_title": "Moby-Dick",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Herman Melville",
+        "sort_name": "Melville, Herman",
+        "slug": "herman-melville",
+        "role": "author",
+        "bio": "American novelist known for maritime fiction."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Penguin Classics",
+        "published_year": 2003,
+        "language": "en",
+        "page_count": 1088,
+        "isbns": [
+          {
+            "code": "978-0-14-043725-8",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0140437258",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Dover Publications",
+        "published_year": 2001,
+        "language": "en",
+        "page_count": 636,
+        "isbns": [
+          {
+            "code": "978-0-486-41876-6",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0486418766",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "The Odyssey",
+    "description": "An ancient Greek epic poem depicting a hero's long journey home after the fall of Troy.",
+    "first_publication_year": -800,
+    "original_title": "\u1f48\u03b4\u03cd\u03c3\u03c3\u03b5\u03b9\u03b1",
+    "original_language": "el",
+    "contributors": [
+      {
+        "full_name": "Homer",
+        "sort_name": "Homer",
+        "slug": "homer",
+        "role": "author",
+        "bio": "Ancient Greek poet credited as the author of the Odyssey."
+      }
+    ],
+    "releases": [
+      {
+        "format": "paperback",
+        "publisher": "Penguin Classics",
+        "published_year": 2003,
+        "language": "en",
+        "page_count": 560,
+        "isbns": [
+          {
+            "code": "978-0-14-043929-0",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0140439293",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Penguin",
+        "published_year": 2012,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-0-14-191842-1",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Crime and Punishment",
+    "description": "A psychological novel exploring morality, guilt, and redemption in 19th-century Russia.",
+    "first_publication_year": 1866,
+    "original_title": "\u041f\u0440\u0435\u0441\u0442\u0443\u043f\u043b\u0435\u043d\u0438\u0435 \u0438 \u043d\u0430\u043a\u0430\u0437\u0430\u043d\u0438\u0435",
+    "original_language": "ru",
+    "contributors": [
+      {
+        "full_name": "Fyodor Dostoevsky",
+        "sort_name": "Dostoevsky, Fyodor",
+        "slug": "fyodor-dostoevsky",
+        "role": "author",
+        "bio": "Russian novelist known for psychological fiction."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Dover Publications",
+        "published_year": 1992,
+        "language": "en",
+        "page_count": 688,
+        "isbns": [
+          {
+            "code": "978-0-486-43472-2",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0486434729",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Penguin Classics",
+        "published_year": 2003,
+        "language": "en",
+        "page_count": 680,
+        "isbns": [
+          {
+            "code": "978-0-14-043948-1",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0140439485",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Penguin",
+        "published_year": 2014,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-0-14-191932-9",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "War and Peace",
+    "description": "A monumental epic novel set during the Napoleonic Wars, exploring history, love, and human nature.",
+    "first_publication_year": 1869,
+    "original_title": "\u0412\u043e\u0439\u043d\u0430 \u0438 \u043c\u0438\u0440",
+    "original_language": "ru",
+    "contributors": [
+      {
+        "full_name": "Leo Tolstoy",
+        "sort_name": "Tolstoy, Leo",
+        "slug": "leo-tolstoy",
+        "role": "author",
+        "bio": "Russian novelist known for philosophical and historical fiction."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Oxford World's Classics",
+        "published_year": 2010,
+        "language": "en",
+        "page_count": 1024,
+        "isbns": [
+          {
+            "code": "978-0-19-953746-6",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0199537461",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Penguin Classics",
+        "published_year": 2005,
+        "language": "en",
+        "page_count": 1296,
+        "isbns": [
+          {
+            "code": "978-0-14-303943-3",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0143039438",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "The Hobbit",
+    "description": "A fantasy adventure following a small hobbit's unexpected journey through a mystical world.",
+    "first_publication_year": 1937,
+    "original_title": "The Hobbit",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "J. R. R. Tolkien",
+        "sort_name": "Tolkien, J. R. R.",
+        "slug": "j-r-r-tolkien",
+        "role": "author",
+        "bio": "English author known for fantasy fiction."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Houghton Mifflin",
+        "published_year": 2012,
+        "language": "en",
+        "page_count": 310,
+        "isbns": [
+          {
+            "code": "978-0-547-92807-7",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0547928076",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Ballantine Books",
+        "published_year": 1982,
+        "language": "en",
+        "page_count": 310,
+        "isbns": [
+          {
+            "code": "978-0-345-33968-1",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0345339681",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Mariner Books",
+        "published_year": 2012,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-0-547-92808-4",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "The Fellowship of the Ring",
+    "description": "The first volume of an epic fantasy trilogy following a hobbit's quest to destroy a powerful ring.",
+    "first_publication_year": 1954,
+    "original_title": "The Fellowship of the Ring",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "J. R. R. Tolkien",
+        "sort_name": "Tolkien, J. R. R.",
+        "slug": "j-r-r-tolkien",
+        "role": "author",
+        "bio": "English author known for fantasy fiction."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Houghton Mifflin",
+        "published_year": 1954,
+        "language": "en",
+        "page_count": 423,
+        "isbns": [
+          {
+            "code": "978-0-547-92822-0",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0547928220",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Ballantine Books",
+        "published_year": 1986,
+        "language": "en",
+        "page_count": 398,
+        "isbns": [
+          {
+            "code": "978-0-345-33973-5",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0345339738",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "The Two Towers",
+    "description": "The second volume of The Lord of the Rings trilogy, continuing the quest against evil.",
+    "first_publication_year": 1954,
+    "original_title": "The Two Towers",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "J. R. R. Tolkien",
+        "sort_name": "Tolkien, J. R. R.",
+        "slug": "j-r-r-tolkien",
+        "role": "author",
+        "bio": "English author known for fantasy fiction."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Houghton Mifflin",
+        "published_year": 1954,
+        "language": "en",
+        "page_count": 352,
+        "isbns": [
+          {
+            "code": "978-0-547-92823-7",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0547928238",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Ballantine Books",
+        "published_year": 1986,
+        "language": "en",
+        "page_count": 330,
+        "isbns": [
+          {
+            "code": "978-0-345-33974-2",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0345339746",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "The Return of the King",
+    "description": "The concluding volume of The Lord of the Rings trilogy, bringing the quest to its climax.",
+    "first_publication_year": 1955,
+    "original_title": "The Return of the King",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "J. R. R. Tolkien",
+        "sort_name": "Tolkien, J. R. R.",
+        "slug": "j-r-r-tolkien",
+        "role": "author",
+        "bio": "English author known for fantasy fiction."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Houghton Mifflin",
+        "published_year": 1955,
+        "language": "en",
+        "page_count": 416,
+        "isbns": [
+          {
+            "code": "978-0-547-92824-4",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0547928246",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Ballantine Books",
+        "published_year": 1986,
+        "language": "en",
+        "page_count": 394,
+        "isbns": [
+          {
+            "code": "978-0-345-33975-9",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0345339754",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Harry Potter and the Philosopher's Stone",
+    "description": "A young wizard discovers his magical heritage and begins his education at a magical school.",
+    "first_publication_year": 1997,
+    "original_title": "Harry Potter and the Philosopher's Stone",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "J. K. Rowling",
+        "sort_name": "Rowling, J. K.",
+        "slug": "j-k-rowling",
+        "role": "author",
+        "bio": "British author known for the Harry Potter series."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Bloomsbury",
+        "published_year": 1997,
+        "language": "en",
+        "page_count": 309,
+        "isbns": [
+          {
+            "code": "978-0-747-53269-9",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0747532699",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Bloomsbury",
+        "published_year": 1998,
+        "language": "en",
+        "page_count": 309,
+        "isbns": [
+          {
+            "code": "978-0-747-53269-9",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0747532699",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Pottermore Publishing",
+        "published_year": 2015,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-1-781-10008-6",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Harry Potter and the Chamber of Secrets",
+    "description": "A young wizard's second year at magical school involves a dangerous hidden chamber.",
+    "first_publication_year": 1998,
+    "original_title": "Harry Potter and the Chamber of Secrets",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "J. K. Rowling",
+        "sort_name": "Rowling, J. K.",
+        "slug": "j-k-rowling",
+        "role": "author",
+        "bio": "British author known for the Harry Potter series."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Bloomsbury",
+        "published_year": 1998,
+        "language": "en",
+        "page_count": 251,
+        "isbns": [
+          {
+            "code": "978-0-747-53790-8",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0747537909",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Bloomsbury",
+        "published_year": 1999,
+        "language": "en",
+        "page_count": 251,
+        "isbns": [
+          {
+            "code": "978-0-747-53790-8",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0747537909",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Harry Potter and the Prisoner of Azkaban",
+    "description": "A dangerous prisoner escapes and a mysterious threat looms during the third magical year.",
+    "first_publication_year": 1999,
+    "original_title": "Harry Potter and the Prisoner of Azkaban",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "J. K. Rowling",
+        "sort_name": "Rowling, J. K.",
+        "slug": "j-k-rowling",
+        "role": "author",
+        "bio": "British author known for the Harry Potter series."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Bloomsbury",
+        "published_year": 1999,
+        "language": "en",
+        "page_count": 317,
+        "isbns": [
+          {
+            "code": "978-0-747-53934-6",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0747539340",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Bloomsbury",
+        "published_year": 2000,
+        "language": "en",
+        "page_count": 317,
+        "isbns": [
+          {
+            "code": "978-0-747-53934-6",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0747539340",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "The Name of the Wind",
+    "description": "An epic fantasy following a legendary figure recounting his origins and magical education.",
+    "first_publication_year": 2007,
+    "original_title": "The Name of the Wind",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Patrick Rothfuss",
+        "sort_name": "Rothfuss, Patrick",
+        "slug": "patrick-rothfuss",
+        "role": "author",
+        "bio": "American fantasy author known for The Kingkiller Chronicle."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "DAW",
+        "published_year": 2007,
+        "language": "en",
+        "page_count": 662,
+        "isbns": [
+          {
+            "code": "978-0-756-40494-1",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0756404941",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "DAW",
+        "published_year": 2008,
+        "language": "en",
+        "page_count": 662,
+        "isbns": [
+          {
+            "code": "978-0-756-40494-1",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0756404941",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "The Wise Man's Fear",
+    "description": "The second installment in the Kingkiller Chronicle, continuing an epic tale of magic and adventure.",
+    "first_publication_year": 2011,
+    "original_title": "The Wise Man's Fear",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Patrick Rothfuss",
+        "sort_name": "Rothfuss, Patrick",
+        "slug": "patrick-rothfuss",
+        "role": "author",
+        "bio": "American fantasy author known for The Kingkiller Chronicle."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "DAW",
+        "published_year": 2011,
+        "language": "en",
+        "page_count": 662,
+        "isbns": [
+          {
+            "code": "978-0-756-40848-3",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0756408489",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "DAW",
+        "published_year": 2012,
+        "language": "en",
+        "page_count": 662,
+        "isbns": [
+          {
+            "code": "978-0-756-40848-3",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0756408489",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "A Game of Thrones",
+    "description": "An epic fantasy novel featuring intricate political conflicts and supernatural threats.",
+    "first_publication_year": 1996,
+    "original_title": "A Game of Thrones",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "George R. R. Martin",
+        "sort_name": "Martin, George R. R.",
+        "slug": "george-r-r-martin",
+        "role": "author",
+        "bio": "American novelist known for A Song of Ice and Fire series."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Bantam Spectra",
+        "published_year": 1996,
+        "language": "en",
+        "page_count": 694,
+        "isbns": [
+          {
+            "code": "978-0-553-10354-1",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0553103541",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Bantam Books",
+        "published_year": 2002,
+        "language": "en",
+        "page_count": 819,
+        "isbns": [
+          {
+            "code": "978-0-553-57340-3",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0553573403",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Bantam",
+        "published_year": 2011,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-0-553-90101-6",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "A Clash of Kings",
+    "description": "The second volume in A Song of Ice and Fire, intensifying conflicts and introducing new threats.",
+    "first_publication_year": 1998,
+    "original_title": "A Clash of Kings",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "George R. R. Martin",
+        "sort_name": "Martin, George R. R.",
+        "slug": "george-r-r-martin",
+        "role": "author",
+        "bio": "American novelist known for A Song of Ice and Fire series."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Bantam Spectra",
+        "published_year": 1998,
+        "language": "en",
+        "page_count": 761,
+        "isbns": [
+          {
+            "code": "978-0-553-10354-2",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0553103542",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Bantam Books",
+        "published_year": 2003,
+        "language": "en",
+        "page_count": 873,
+        "isbns": [
+          {
+            "code": "978-0-553-57341-0",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0553573410",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "A Storm of Swords",
+    "description": "The third volume continues epic political intrigue and war across multiple kingdoms.",
+    "first_publication_year": 2000,
+    "original_title": "A Storm of Swords",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "George R. R. Martin",
+        "sort_name": "Martin, George R. R.",
+        "slug": "george-r-r-martin",
+        "role": "author",
+        "bio": "American novelist known for A Song of Ice and Fire series."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Bantam Spectra",
+        "published_year": 2000,
+        "language": "en",
+        "page_count": 973,
+        "isbns": [
+          {
+            "code": "978-0-553-10354-3",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0553103543",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Bantam Books",
+        "published_year": 2003,
+        "language": "en",
+        "page_count": 1144,
+        "isbns": [
+          {
+            "code": "978-0-553-57342-7",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0553573427",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "The Silent Patient",
+    "description": "A psychological thriller about a woman's mysterious silence after a shocking crime.",
+    "first_publication_year": 2019,
+    "original_title": "The Silent Patient",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Alex Michaelides",
+        "sort_name": "Michaelides, Alex",
+        "slug": "alex-michaelides",
+        "role": "author",
+        "bio": "Cypriot author of psychological thrillers."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Celadon Books",
+        "published_year": 2019,
+        "language": "en",
+        "page_count": 336,
+        "isbns": [
+          {
+            "code": "978-1-250-19394-7",
+            "kind": "isbn13"
+          },
+          {
+            "code": "1250193946",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Celadon Books",
+        "published_year": 2020,
+        "language": "en",
+        "page_count": 336,
+        "isbns": [
+          {
+            "code": "978-1-250-19394-7",
+            "kind": "isbn13"
+          },
+          {
+            "code": "1250193946",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Celadon",
+        "published_year": 2019,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-1-250-23597-9",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "The Girl on the Train",
+    "description": "A psychological thriller following a woman who witnesses a crime from a commuter train.",
+    "first_publication_year": 2015,
+    "original_title": "The Girl on the Train",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Paula Hawkins",
+        "sort_name": "Hawkins, Paula",
+        "slug": "paula-hawkins",
+        "role": "author",
+        "bio": "British author of psychological thrillers."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Riverhead Books",
+        "published_year": 2015,
+        "language": "en",
+        "page_count": 423,
+        "isbns": [
+          {
+            "code": "978-1-594-63426-5",
+            "kind": "isbn13"
+          },
+          {
+            "code": "1594634262",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Riverhead Books",
+        "published_year": 2016,
+        "language": "en",
+        "page_count": 423,
+        "isbns": [
+          {
+            "code": "978-0-425-28205-4",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0425282054",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Penguin",
+        "published_year": 2015,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-1-101-91778-5",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Educated",
+    "description": "A powerful memoir of a woman's journey from isolation to education against all odds.",
+    "first_publication_year": 2018,
+    "original_title": "Educated",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Tara Westover",
+        "sort_name": "Westover, Tara",
+        "slug": "tara-westover",
+        "role": "author",
+        "bio": "American author and memoirist known for her autobiography."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Scribner",
+        "published_year": 2018,
+        "language": "en",
+        "page_count": 352,
+        "isbns": [
+          {
+            "code": "978-1-250-07599-8",
+            "kind": "isbn13"
+          },
+          {
+            "code": "1250075998",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Scribner",
+        "published_year": 2019,
+        "language": "en",
+        "page_count": 352,
+        "isbns": [
+          {
+            "code": "978-1-250-07600-1",
+            "kind": "isbn13"
+          },
+          {
+            "code": "1250076005",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Sapiens",
+    "description": "A sweeping history of humankind from the Stone Age to the modern era.",
+    "first_publication_year": 2011,
+    "original_title": "Sapiens: A Brief History of Humankind",
+    "original_language": "he",
+    "contributors": [
+      {
+        "full_name": "Yuval Noah Harari",
+        "sort_name": "Harari, Yuval Noah",
+        "slug": "yuval-noah-harari",
+        "role": "author",
+        "bio": "Israeli historian and author known for popular history works."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Harper",
+        "published_year": 2014,
+        "language": "en",
+        "page_count": 468,
+        "isbns": [
+          {
+            "code": "978-0-062-31657-1",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0062316575",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Harper Perennial",
+        "published_year": 2015,
+        "language": "en",
+        "page_count": 528,
+        "isbns": [
+          {
+            "code": "978-0-062-31668-7",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0062316680",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Harper",
+        "published_year": 2014,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-0-062-31657-1",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Thinking, Fast and Slow",
+    "description": "A study of the two systems of human thought and cognitive biases affecting decision-making.",
+    "first_publication_year": 2011,
+    "original_title": "Thinking, Fast and Slow",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Daniel Kahneman",
+        "sort_name": "Kahneman, Daniel",
+        "slug": "daniel-kahneman",
+        "role": "author",
+        "bio": "Israeli psychologist and economist known for behavioral economics research."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Farrar, Straus and Giroux",
+        "published_year": 2011,
+        "language": "en",
+        "page_count": 499,
+        "isbns": [
+          {
+            "code": "978-0-374-27563-1",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0374275633",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Farrar, Straus and Giroux",
+        "published_year": 2013,
+        "language": "en",
+        "page_count": 560,
+        "isbns": [
+          {
+            "code": "978-0-374-53355-7",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0374533555",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Atomic Habits",
+    "description": "A practical guide to building small, sustainable habits that compound into remarkable results.",
+    "first_publication_year": 2018,
+    "original_title": "Atomic Habits: An Easy & Proven Way to Build Good Habits and Break Bad Ones",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "James Clear",
+        "sort_name": "Clear, James",
+        "slug": "james-clear",
+        "role": "author",
+        "bio": "American author and habit formation expert."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Avery",
+        "published_year": 2018,
+        "language": "en",
+        "page_count": 320,
+        "isbns": [
+          {
+            "code": "978-0-735-21159-7",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0735211590",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Avery",
+        "published_year": 2019,
+        "language": "en",
+        "page_count": 320,
+        "isbns": [
+          {
+            "code": "978-0-735-21184-9",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0735211841",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Penguin",
+        "published_year": 2018,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-0-735-21159-7",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Becoming",
+    "description": "The memoir of former First Lady Michelle Obama, chronicling her life and journey to the White House.",
+    "first_publication_year": 2018,
+    "original_title": "Becoming: A Guided Journal for Discovering Your Voice",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Michelle Obama",
+        "sort_name": "Obama, Michelle",
+        "slug": "michelle-obama",
+        "role": "author",
+        "bio": "Former First Lady of the United States and author."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Crown",
+        "published_year": 2018,
+        "language": "en",
+        "page_count": 448,
+        "isbns": [
+          {
+            "code": "978-1-524-76326-1",
+            "kind": "isbn13"
+          },
+          {
+            "code": "1524763268",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Crown",
+        "published_year": 2019,
+        "language": "en",
+        "page_count": 448,
+        "isbns": [
+          {
+            "code": "978-1-524-76327-8",
+            "kind": "isbn13"
+          },
+          {
+            "code": "1524763276",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Dune",
+    "description": "An epic science fiction novel set on a desert planet, exploring politics, religion, and survival.",
+    "first_publication_year": 1965,
+    "original_title": "Dune",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Frank Herbert",
+        "sort_name": "Herbert, Frank",
+        "slug": "frank-herbert",
+        "role": "author",
+        "bio": "American science fiction author known for the Dune series."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Ace Books",
+        "published_year": 2006,
+        "language": "en",
+        "page_count": 688,
+        "isbns": [
+          {
+            "code": "978-0-441-01477-9",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0441014771",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Ace",
+        "published_year": 2006,
+        "language": "en",
+        "page_count": 688,
+        "isbns": [
+          {
+            "code": "978-0-441-01477-9",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0441014771",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Penguin",
+        "published_year": 2020,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-0-441-01477-9",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Foundation",
+    "description": "A science fiction epic about the fall and rise of galactic civilizations using psychohistory.",
+    "first_publication_year": 1951,
+    "original_title": "Foundation",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Isaac Asimov",
+        "sort_name": "Asimov, Isaac",
+        "slug": "isaac-asimov",
+        "role": "author",
+        "bio": "American science fiction author and scientist."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Bantam",
+        "published_year": 2004,
+        "language": "en",
+        "page_count": 255,
+        "isbns": [
+          {
+            "code": "978-0-553-29438-0",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0553294381",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Bantam",
+        "published_year": 2004,
+        "language": "en",
+        "page_count": 255,
+        "isbns": [
+          {
+            "code": "978-0-553-29438-0",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0553294381",
+            "kind": "isbn10"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "The Martian",
+    "description": "A survival story of an astronaut stranded on Mars, using science and ingenuity to survive.",
+    "first_publication_year": 2011,
+    "original_title": "The Martian",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Andy Weir",
+        "sort_name": "Weir, Andy",
+        "slug": "andy-weir",
+        "role": "author",
+        "bio": "American author known for hard science fiction."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Crown",
+        "published_year": 2014,
+        "language": "en",
+        "page_count": 369,
+        "isbns": [
+          {
+            "code": "978-0-804-13959-1",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0804139598",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Crown",
+        "published_year": 2015,
+        "language": "en",
+        "page_count": 369,
+        "isbns": [
+          {
+            "code": "978-0-553-41797-8",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0553417971",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Crown",
+        "published_year": 2014,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-0-804-14268-3",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Beloved",
+    "description": "A haunting novel of slavery and its lasting psychological impact on a freed Black woman.",
+    "first_publication_year": 1987,
+    "original_title": "Beloved",
+    "original_language": "en",
+    "contributors": [
+      {
+        "full_name": "Toni Morrison",
+        "sort_name": "Morrison, Toni",
+        "slug": "toni-morrison",
+        "role": "author",
+        "bio": "American novelist known for powerful explorations of African American history."
+      }
+    ],
+    "releases": [
+      {
+        "format": "hardcover",
+        "publisher": "Knopf",
+        "published_year": 1987,
+        "language": "en",
+        "page_count": 324,
+        "isbns": [
+          {
+            "code": "978-0-394-53597-7",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0394535979",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "paperback",
+        "publisher": "Plume",
+        "published_year": 1988,
+        "language": "en",
+        "page_count": 324,
+        "isbns": [
+          {
+            "code": "978-0-452-26446-8",
+            "kind": "isbn13"
+          },
+          {
+            "code": "0452264468",
+            "kind": "isbn10"
+          }
+        ]
+      },
+      {
+        "format": "ebook",
+        "publisher": "Knopf",
+        "published_year": 2016,
+        "language": "en",
+        "isbns": [
+          {
+            "code": "978-0-394-53597-7",
+            "kind": "isbn13"
+          }
+        ]
+      }
+    ]
+  }
+]

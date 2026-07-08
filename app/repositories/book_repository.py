@@ -6,7 +6,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import col, select
 
 from app.models.book_status import BookStatus
-from app.models.catalog import ISBN, Book, BookContributor, Contributor, Release
+from app.models.catalog import (
+    ISBN,
+    Book,
+    BookContributor,
+    Contributor,
+    ContributorRole,
+    Release,
+)
 from app.models.collection import CollectionItem
 from app.models.review import Review
 from app.repositories.loading import eager, eager_nested
@@ -153,3 +160,39 @@ class BookRepository:
         await self.session.delete(source)
         await self.session.commit()
         return await self.get_by_id(target_id)
+
+    async def add_contributor(
+        self, book_id: UUID, contributor_id: UUID, role: ContributorRole
+    ) -> bool:
+        """Add a contributor to a book with a specific role. Returns True if newly
+        created, False if the link already existed.
+        """
+        existing = await self.session.get(
+            BookContributor,
+            (book_id, contributor_id, role),
+        )
+        if existing is not None:
+            return False
+
+        link = BookContributor(
+            book_id=book_id, contributor_id=contributor_id, role=role
+        )
+        self.session.add(link)
+        await self.session.commit()
+        return True
+
+    async def remove_contributor(
+        self, book_id: UUID, contributor_id: UUID, role: ContributorRole
+    ) -> bool:
+        """Remove a contributor from a book. Returns True if deleted, False if
+        not found."""
+        existing = await self.session.get(
+            BookContributor,
+            (book_id, contributor_id, role),
+        )
+        if existing is None:
+            return False
+
+        await self.session.delete(existing)
+        await self.session.commit()
+        return True

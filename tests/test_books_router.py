@@ -9,8 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import get_current_user
 from app.main import app
 from app.models.book_status import BookStatus, BookStatusKind
-from app.models.catalog import ISBN, ISBNKind, Release, ReleaseFormat
+from app.models.catalog import (
+    ISBN,
+    ISBNKind,
+    Release,
+    ReleaseFormat,
+)
 from app.models.catalog import Book as BookModel
+from app.models.catalog import Contributor as ContributorModel
 from app.models.collection import Collection, CollectionItem
 from app.models.review import Review
 from app.models.user import User
@@ -18,6 +24,7 @@ from app.models.user import User
 
 def _login_as(user: User) -> None:
     app.dependency_overrides[get_current_user] = lambda: user
+
 
 BookWithReleases = tuple[BookModel, ISBN, ISBN]
 
@@ -651,3 +658,145 @@ class TestMergeBook:
             select(Review).where(Review.book_id == target.id)
         )
         assert len(result.scalars().all()) == 1
+
+
+class TestBookContributors:
+    async def test_add_contributor_requires_admin(
+        self, async_client: AsyncClient, book_with_releases: BookWithReleases
+    ):
+        book, _, _ = book_with_releases
+        response = await async_client.post(
+            f"/api/v1/books/{book.id}/contributors",
+            json={
+                "contributor_id": "00000000-0000-0000-0000-000000000000",
+                "role": "author",
+            },
+        )
+        assert response.status_code == 401
+
+    async def test_add_contributor_forbidden_for_non_admin(
+        self, reader_client: AsyncClient, book_with_releases: BookWithReleases
+    ):
+        book, _, _ = book_with_releases
+        response = await reader_client.post(
+            f"/api/v1/books/{book.id}/contributors",
+            json={
+                "contributor_id": "00000000-0000-0000-0000-000000000000",
+                "role": "author",
+            },
+        )
+        assert response.status_code == 403
+
+    async def test_add_contributor_book_not_found(self, admin_client: AsyncClient):
+        response = await admin_client.post(
+            "/api/v1/books/00000000-0000-0000-0000-000000000000/contributors",
+            json={
+                "contributor_id": "00000000-0000-0000-0000-000000000000",
+                "role": "author",
+            },
+        )
+        assert response.status_code == 404
+
+    async def test_add_contributor_contributor_not_found(
+        self, admin_client: AsyncClient, book_with_releases: BookWithReleases
+    ):
+        book, _, _ = book_with_releases
+        response = await admin_client.post(
+            f"/api/v1/books/{book.id}/contributors",
+            json={
+                "contributor_id": "00000000-0000-0000-0000-000000000000",
+                "role": "author",
+            },
+        )
+        assert response.status_code == 404
+
+    async def test_add_contributor_success(
+        self,
+        admin_client: AsyncClient,
+        db_session: AsyncSession,
+        book_with_releases: BookWithReleases,
+    ):
+        book, _, _ = book_with_releases
+        contributor = ContributorModel(
+            full_name="Frank Herbert",
+            sort_name="Herbert, Frank",
+            slug="frank-herbert",
+        )
+        db_session.add(contributor)
+        await db_session.commit()
+        await db_session.refresh(contributor)
+
+        response = await admin_client.post(
+            f"/api/v1/books/{book.id}/contributors",
+            json={"contributor_id": str(contributor.id), "role": "author"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["status"] == "created"
+
+    async def test_add_contributor_idempotent(
+        self,
+        admin_client: AsyncClient,
+        db_session: AsyncSession,
+        book_with_releases: BookWithReleases,
+    ):
+        book, _, _ = book_with_releases
+        contributor = ContributorModel(
+            full_name="Frank Herbert",
+            sort_name="Herbert, Frank",
+            slug="frank-herbert",
+        )
+        db_session.add(contributor)
+        await db_session.commit()
+        await db_session.refresh(contributor)
+
+        response1 = await admin_client.post(
+            f"/api/v1/books/{book.id}/contributors",
+            json={"contributor_id": str(contributor.id), "role": "author"},
+        )
+        assert response1.status_code == 200
+        assert response1.json()["status"] == "created"
+
+        response2 = await admin_client.post(
+            f"/api/v1/books/{book.id}/contributors",
+            json={"contributor_id": str(contributor.id), "role": "author"},
+        )
+        assert response2.status_code == 200
+        assert response2.json()["status"] == "already_existed"
+
+    async def test_remove_contributor_success(
+        self,
+        admin_client: AsyncClient,
+        db_session: AsyncSession,
+        book_with_releases: BookWithReleases,
+    ):
+        book, _, _ = book_with_releases
+        contributor = ContributorModel(
+            full_name="Frank Herbert",
+            sort_name="Herbert, Frank",
+            slug="frank-herbert",
+        )
+        db_session.add(contributor)
+        await db_session.commit()
+        await db_session.refresh(contributor)
+
+        await admin_client.post(
+            f"/api/v1/books/{book.id}/contributors",
+            json={"contributor_id": str(contributor.id), "role": "author"},
+        )
+
+        response = await admin_client.delete(
+            f"/api/v1/books/{book.id}/contributors/{contributor.id}?role=author"
+        )
+
+        assert response.status_code == 204
+
+    async def test_remove_contributor_not_found(
+        self, admin_client: AsyncClient, book_with_releases: BookWithReleases
+    ):
+        book, _, _ = book_with_releases
+        response = await admin_client.delete(
+            f"/api/v1/books/{book.id}/contributors/00000000-0000-0000-0000-000000000000?role=author"
+        )
+        assert response.status_code == 404

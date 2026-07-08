@@ -3,9 +3,16 @@ from uuid import uuid4
 
 import jwt
 import pytest
+from itsdangerous import BadSignature, SignatureExpired
 
 from app.core.config import settings
-from app.core.security import create_access_token, create_refresh_token, decode_token
+from app.core.security import (
+    create_access_token,
+    create_email_verification_token,
+    create_refresh_token,
+    decode_email_verification_token,
+    decode_token,
+)
 from app.services.security import hash_password, verify_password
 
 
@@ -74,3 +81,25 @@ def test_decode_token_rejects_tampered_signature():
     tampered = token[:-1] + ("a" if token[-1] != "a" else "b")
     with pytest.raises(jwt.InvalidSignatureError):
         decode_token(tampered)
+
+
+def test_create_email_verification_token_round_trips():
+    user_id = uuid4()
+    token = create_email_verification_token(user_id)
+    assert decode_email_verification_token(token) == user_id
+
+
+def test_decode_email_verification_token_rejects_tampered_signature():
+    token = create_email_verification_token(uuid4())
+    tampered = token[:-1] + ("a" if token[-1] != "a" else "b")
+    with pytest.raises(BadSignature):
+        decode_email_verification_token(tampered)
+
+
+def test_decode_email_verification_token_rejects_expired_token(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    token = create_email_verification_token(uuid4())
+    monkeypatch.setattr("app.core.security.EMAIL_VERIFICATION_MAX_AGE_SECONDS", -1)
+    with pytest.raises(SignatureExpired):
+        decode_email_verification_token(token)

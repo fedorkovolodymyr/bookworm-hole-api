@@ -6,7 +6,7 @@
 - `task lint` — ruff check + pyright (both must pass)
 - `task lint-format` — run format then lint in sequence
 - `task type-check` — pyright only
-- `task test` — pytest (asyncio_mode=auto), against an isolated `*_test` database auto-created/migrated at session start, with coverage report
+- `task test` — pytest (asyncio_mode=auto), against an isolated `*_test` database auto-created/migrated at session start, with coverage report (term-missing + xml)
 - `task test -- --collect-only` — verify pytest config loads
 - `task precommit-install` — install git pre-commit hooks (required first-time setup)
 - `task precommit` — run all pre-commit hooks against every file (same set CI runs)
@@ -18,9 +18,10 @@
 - `task shell` — shell into the running api container
 - `task test-container` / `task lint-container` / `task format-container` — same, run inside the api container
 - `task migrate` / `task migrate:new -- "message"` — Alembic, inside the api container
-- `task seed` / `task seed:test` — load dev / test fixture data
+- `task seed` / `task seed:catalog` / `task seed:dev` / `task seed:test` — load default / catalog / dev fixtures (5 users + collections/reviews/sessions) / test seed data
 - `task psql` — psql shell against the dev database
 - `task refresh-metadata` — manually refresh stale release metadata from external sources (releases older than N days, default 30)
+- `task purge-deleted-users` — hard-delete accounts past their GDPR deletion grace period (anonymizes their reviews first)
 - `task release-dry-run` — preview next version bump from commits since last tag, no changes made
 - `task release` — bump `pyproject.toml` version, tag, publish GitHub release (CI-only, see Release Flow)
 - `task coverage-badge` — regenerate `coverage.svg` from the last test run (CI-only, committed on push to `main`)

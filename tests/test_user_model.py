@@ -18,6 +18,7 @@ def test_user_table_columns():
         "timezone",
         "is_active",
         "is_admin",
+        "email_verified_at",
         "created_at",
         "updated_at",
     }
@@ -25,6 +26,7 @@ def test_user_table_columns():
     assert columns["email"].unique
     assert columns["username"].unique
     assert columns["password_hash"].nullable
+    assert columns["email_verified_at"].nullable
 
 
 def test_user_defaults():
@@ -34,6 +36,7 @@ def test_user_defaults():
     assert user.timezone == "UTC"
     assert user.is_active is True
     assert user.is_admin is False
+    assert user.email_verified_at is None
 
 
 def test_user_locale_rejects_invalid_value():

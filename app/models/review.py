@@ -21,7 +21,9 @@ class Review(SQLModel, IdMixin, TimestampMixin, table=True):
         UniqueConstraint("user_id", "release_id", name="uq_review_user_release"),
     )
 
-    user_id: uuid.UUID = Field(foreign_key="user.id", index=True)
+    # Nullable so a deleted user's review can be anonymized (user_id -> NULL)
+    # instead of removed, preserving the review thread on its book/release.
+    user_id: uuid.UUID | None = Field(default=None, foreign_key="user.id", index=True)
     book_id: uuid.UUID | None = Field(default=None, foreign_key="book.id", index=True)
     release_id: uuid.UUID | None = Field(
         default=None, foreign_key="releases.id", index=True

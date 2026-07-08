@@ -9,6 +9,7 @@ from sqlmodel import col, select
 
 from app.models.book_status import BookStatus, BookStatusKind
 from app.models.catalog import Book, Release
+from app.repositories.loading import eager_nested
 from app.schemas.book_status_schemas import UpdateBookStatusSchema
 
 BookStatusSort = Literal["acquired_at", "title"]
@@ -33,6 +34,24 @@ class BookStatusRepository:
         query = select(BookStatus).where(col(BookStatus.user_id) == user_id)
         if status:
             query = query.where(col(BookStatus.status) == status)
+        result = await self.session.execute(query)
+        return result.scalars().all()
+
+    async def get_all_for_user_with_eager_load(
+        self,
+        user_id: UUID,
+    ) -> Sequence[BookStatus]:
+        query = (
+            select(BookStatus)
+            .where(col(BookStatus.user_id) == user_id)
+            .options(
+                eager_nested(BookStatus.book, Book.releases),
+                eager_nested(BookStatus.book, Book.contributors),
+                eager_nested(BookStatus.release, Release.book),
+                eager_nested(BookStatus.release, Release.isbns),
+                eager_nested(BookStatus.release, Release.contributors),
+            )
+        )
         result = await self.session.execute(query)
         return result.scalars().all()
 
@@ -67,6 +86,27 @@ class BookStatusRepository:
         else:
             query = query.order_by(col(BookStatus.acquired_at).desc())
 
+        result = await self.session.execute(query.offset(skip).limit(limit))
+        return result.scalars().all(), total
+
+    async def get_library_for_user(
+        self,
+        user_id: UUID,
+        skip: int = 0,
+        limit: int = 10,
+    ) -> tuple[Sequence[BookStatus], int]:
+        """Get all books in a user's library (all BookStatus entries), paginated."""
+        filters = (col(BookStatus.user_id) == user_id,)
+        count_query = select(func.count()).select_from(
+            select(BookStatus.id).where(*filters).subquery()
+        )
+        total = (await self.session.execute(count_query)).scalar_one()
+
+        query = (
+            select(BookStatus)
+            .where(*filters)
+            .order_by(col(BookStatus.acquired_at).desc())
+        )
         result = await self.session.execute(query.offset(skip).limit(limit))
         return result.scalars().all(), total
 

@@ -50,6 +50,7 @@ class AuthSettings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 30
+    password_reset_token_expire_minutes: int = 1440
 
     model_config = SettingsConfigDict(
         env_prefix="AUTH_",
@@ -65,6 +66,9 @@ class AppSettings(BaseSettings):
     log_level: str = "INFO"
     cors_origins: Annotated[list[str], NoDecode] = []
     database_url: str | None = None
+    # Replace-mode Google Drive restore hard-wipes the account before writing
+    # the backup back — kept opt-in for MVP until a re-auth flow exists.
+    enable_backup_replace_mode: bool = False
 
     @field_validator("cors_origins", mode="before")
     @classmethod
@@ -111,6 +115,62 @@ class GoogleBooksSettings(BaseSettings):
     )
 
 
+class MailerSettings(BaseSettings):
+    backend: Literal["console", "smtp"] = "console"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_from_email: str = "noreply@bookwormhole.app"
+
+    model_config = SettingsConfigDict(
+        env_prefix="MAILER_",
+        case_sensitive=False,
+        extra="ignore",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+
+class EncryptionSettings(BaseSettings):
+    # Valid Fernet key so the dev/test default works out of the box; never used in prod
+    # (see Settings.__init__ check below).
+    key: str = "IXfPzT7cW1RQq9wV5Hn2mA8sK0eB3dL6oJ4uY_gN7pk="
+
+    model_config = SettingsConfigDict(
+        env_prefix="ENCRYPTION_",
+        case_sensitive=False,
+        extra="ignore",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+
+class GoogleOAuthSettings(BaseSettings):
+    client_id: str = ""
+    client_secret: str = ""
+    redirect_uri: str = "http://localhost:8000/api/v1/integrations/google/callback"
+    scopes: Annotated[list[str], NoDecode] = [
+        "https://www.googleapis.com/auth/drive.file"
+    ]
+    state_expire_minutes: int = 10
+
+    @field_validator("scopes", mode="before")
+    @classmethod
+    def _split_scopes(cls, value: str | list[str]) -> list[str]:
+        if isinstance(value, str):
+            return [scope.strip() for scope in value.split(",") if scope.strip()]
+        return value
+
+    model_config = SettingsConfigDict(
+        env_prefix="GOOGLE_OAUTH_",
+        case_sensitive=False,
+        extra="ignore",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+
 class SentrySettings(BaseSettings):
     dsn: str | None = None
     traces_sample_rate: float = 0.0
@@ -118,6 +178,18 @@ class SentrySettings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="SENTRY_",
+        case_sensitive=False,
+        extra="ignore",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+
+class AISettings(BaseSettings):
+    provider: str = "noop"
+
+    model_config = SettingsConfigDict(
+        env_prefix="AI_",
         case_sensitive=False,
         extra="ignore",
         env_file=".env",
@@ -133,7 +205,11 @@ class Settings:
         self.app_settings = AppSettings()
         self.open_library_settings = OpenLibrarySettings()
         self.google_books_settings = GoogleBooksSettings()
+        self.google_oauth_settings = GoogleOAuthSettings()
+        self.encryption_settings = EncryptionSettings()
         self.sentry_settings = SentrySettings()
+        self.mailer_settings = MailerSettings()
+        self.ai_settings = AISettings()
 
         if (
             self.app_settings.app_env == "prod"
@@ -142,6 +218,21 @@ class Settings:
         ):
             raise RuntimeError(
                 "AUTH_SECRET_KEY must be set to a non-default value when APP_ENV=prod"
+            )
+
+        if (
+            self.mailer_settings.backend == "smtp"
+            and not self.mailer_settings.smtp_host
+        ):
+            raise RuntimeError("MAILER_SMTP_HOST must be set when MAILER_BACKEND=smtp")
+
+        if (
+            self.app_settings.app_env == "prod"
+            and self.encryption_settings.key
+            == EncryptionSettings.model_fields["key"].default
+        ):
+            raise RuntimeError(
+                "ENCRYPTION_KEY must be set to a non-default value when APP_ENV=prod"
             )
 
     @property

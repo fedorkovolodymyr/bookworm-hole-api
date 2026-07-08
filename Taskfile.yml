@@ -43,7 +43,7 @@ tasks:
   test:
     desc: Run tests with pytest against an isolated test database (auto-created/migrated)
     cmds:
-      - "{{.UV}} run pytest --cov --cov-report=term-missing {{.CLI_ARGS}}"
+      - "{{.UV}} run pytest --cov --cov-report=term-missing --cov-report=xml {{.CLI_ARGS}}"
   type-check:
     desc: Run pyright type checker only
     cmds:
@@ -185,6 +185,14 @@ tasks:
     desc: Load test fixtures into the test database, via the running api container
     dotenv: [".env"]
     cmd: "{{.DC}} exec -e POSTGRES_DB=bookwormhole_test api uv run python -m scripts.seed_test"
+  "seed:catalog":
+    desc: Load real-book seed catalog into the running api container's database
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api uv run python -m scripts.seed_catalog"
+  "seed:dev":
+    desc: Load dev fixtures (sample users, collections, reviews) on top of catalog
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api uv run python -m scripts.seed_dev"
   psql:
     desc: Open an interactive psql shell against the dev Postgres container
     dotenv: [".env"]
@@ -194,3 +202,8 @@ tasks:
     desc: 'Manually refresh stale release metadata from external sources (e.g., task refresh-metadata -- --older-than-days 14)'
     dotenv: [".env"]
     cmd: "{{.DC}} exec api uv run python -m scripts.refresh_metadata {{.CLI_ARGS}}"
+
+  purge-deleted-users:
+    desc: Hard-delete accounts past their GDPR deletion grace period (anonymizes reviews first)
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api uv run python -m scripts.purge_deleted_users"

@@ -2,7 +2,8 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from app.models.catalog import Release
+from app.core.errors import ErrorMessages, NotFoundError
+from app.models.catalog import Contributor, ContributorRole, Release
 from app.repositories.book_repository import BookRepository
 from app.repositories.release_repository import ReleaseRepository
 from app.repositories.review_repository import ReviewRepository
@@ -58,3 +59,36 @@ class ReleaseService:
         if not release:
             raise HTTPException(status_code=404, detail="Release not found")
         return release
+
+    async def add_contributor(
+        self, release_id: UUID, contributor_id: UUID, role: ContributorRole
+    ) -> bool:
+        release = await self.repository.get_by_id(release_id)
+        if not release:
+            raise NotFoundError(ErrorMessages.RELEASE_NOT_FOUND)
+
+        from app.repositories.contributor_repository import ContributorRepository
+
+        contributor_repo = ContributorRepository(self.repository.session)
+        contributor = await contributor_repo.get_by_id(contributor_id)
+        if not contributor:
+            raise NotFoundError(ErrorMessages.CONTRIBUTOR_NOT_FOUND)
+
+        return await self.repository.add_contributor(release_id, contributor_id, role)
+
+    async def remove_contributor(
+        self, release_id: UUID, contributor_id: UUID, role: ContributorRole
+    ) -> None:
+        release = await self.repository.get_by_id(release_id)
+        if not release:
+            raise NotFoundError(ErrorMessages.RELEASE_NOT_FOUND)
+
+        contributor = await self.repository.session.get(Contributor, contributor_id)
+        if not contributor:
+            raise NotFoundError(ErrorMessages.CONTRIBUTOR_NOT_FOUND)
+
+        removed = await self.repository.remove_contributor(
+            release_id, contributor_id, role
+        )
+        if not removed:
+            raise NotFoundError("Contributor not attached to this release")

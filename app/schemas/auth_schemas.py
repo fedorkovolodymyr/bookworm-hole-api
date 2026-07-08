@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr
@@ -25,6 +26,10 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class VerifyEmailConfirmSchema(BaseModel):
+    token: str
+
+
 class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -34,6 +39,7 @@ class UserResponse(BaseModel):
     display_name: str
     is_active: bool
     is_admin: bool
+    email_verified_at: datetime | None
 
 
 class RegisterResponse(BaseModel):

@@ -1,12 +1,18 @@
+import contextlib
+import hashlib
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError, ErrorMessages, NotFoundError
+from app.models.book_status import BookStatus, BookStatusKind
 from app.models.catalog import Book, Contributor, ContributorRole
 from app.repositories.book_repository import BookRepository
+from app.repositories.book_status_repository import BookStatusRepository
 from app.repositories.contributor_repository import ContributorRepository
 from app.repositories.import_repository import ImportRepository
+from app.schemas.import_schemas import ImportReportSchema, ImportRowResultSchema
 from app.services.external.base import (
     BookSourceAdapter,
     ExternalBookDetail,
@@ -30,11 +36,13 @@ class ImportService:
         book_repository: BookRepository,
         contributor_repository: ContributorRepository,
         import_repository: ImportRepository,
+        book_status_repository: BookStatusRepository | None = None,
     ) -> None:
         self.session = session
         self.book_repository = book_repository
         self.contributor_repository = contributor_repository
         self.import_repository = import_repository
+        self.book_status_repository = book_status_repository
 
     async def import_book(self, source: str, source_id: str) -> Book:
         adapter = get_adapter(source)
@@ -56,6 +64,153 @@ class ImportService:
             await self._create_release(book, detail, normalized_isbns, contributors)
 
         return await self._reload_book(book.id)
+
+    async def import_rows(
+        self,
+        user_id: UUID,
+        rows: list[dict[str, str]],
+        column_mapping: dict[str, str],
+        source_type: str = "bookshelf",
+        file_hash: str | None = None,
+    ) -> ImportReportSchema:
+        created_count = 0
+        matched_count = 0
+        skipped_count = 0
+        failed_count = 0
+        failures: list[ImportRowResultSchema] = []
+
+        if not file_hash and rows:
+            file_hash = self._compute_file_hash(rows)
+
+        for row_index, row in enumerate(rows):
+            try:
+                result = await self._process_import_row(
+                    user_id, row_index, row, column_mapping
+                )
+                if result.status == "created":
+                    created_count += 1
+                elif result.status == "matched":
+                    matched_count += 1
+                elif result.status == "skipped":
+                    skipped_count += 1
+                elif result.status == "failed":
+                    failed_count += 1
+                    failures.append(result)
+            except AppError as e:
+                failed_count += 1
+                failures.append(
+                    ImportRowResultSchema(
+                        row_index=row_index,
+                        status="failed",
+                        reason=str(e),
+                    )
+                )
+
+        if file_hash:
+            await self.import_repository.create_import_record(
+                user_id=user_id,
+                file_hash=file_hash,
+                row_count=len(rows),
+                source_type=source_type,
+            )
+
+        return ImportReportSchema(
+            created=created_count,
+            matched=matched_count,
+            skipped=skipped_count,
+            failed=failed_count,
+            total=len(rows),
+            failures=failures,
+        )
+
+    async def _process_import_row(
+        self,
+        user_id: UUID,
+        row_index: int,
+        row: dict[str, str],
+        column_mapping: dict[str, str],
+    ) -> ImportRowResultSchema:
+        title = row.get(column_mapping.get("title", "title"), "").strip()
+        author = row.get(column_mapping.get("author", "author"), "").strip()
+        isbn = row.get(column_mapping.get("isbn", "isbn"), "").strip()
+        status_str = row.get(column_mapping.get("status", "status"), "owned").strip()
+        date_added = row.get(column_mapping.get("date_added", "date_added"), "").strip()
+
+        if not title:
+            return ImportRowResultSchema(
+                row_index=row_index,
+                status="failed",
+                reason="Missing title",
+            )
+
+        try:
+            status = BookStatusKind(status_str)
+        except ValueError:
+            status = BookStatusKind.owned
+
+        book = await self._resolve_book_from_row(title, author, isbn)
+        if not book:
+            return ImportRowResultSchema(
+                row_index=row_index,
+                status="skipped",
+                reason="Could not resolve book",
+            )
+
+        existing = await self.import_repository.find_existing_status(
+            user_id, book.id, None
+        )
+        if existing:
+            return ImportRowResultSchema(
+                row_index=row_index,
+                status="matched",
+                reason="BookStatus already exists for user",
+                book_id=book.id,
+            )
+
+        acquired_at = None
+        if date_added:
+            with contextlib.suppress(ValueError, AttributeError):
+                acquired_at = datetime.fromisoformat(date_added.replace("Z", "+00:00"))
+
+        book_status = BookStatus(
+            user_id=user_id,
+            book_id=book.id,
+            status=status,
+            acquired_at=acquired_at or datetime.now(UTC),
+        )
+        self.session.add(book_status)
+        await self.session.flush()
+
+        return ImportRowResultSchema(
+            row_index=row_index,
+            status="created",
+            reason="New BookStatus created",
+            book_id=book.id,
+        )
+
+    async def _resolve_book_from_row(
+        self, title: str, author: str, isbn: str | None
+    ) -> Book | None:
+        if isbn:
+            try:
+                normalized = normalize_isbn(isbn)
+                book = await self.book_repository.get_by_isbn(normalized)
+                if book:
+                    return book
+            except ValueError:
+                pass
+
+        if title and author:
+            return await self.import_repository.find_book_by_title_and_contributors(
+                title, []
+            )
+
+        return None
+
+    @staticmethod
+    def _compute_file_hash(rows: list[dict[str, str]]) -> str:
+        content = repr(rows).encode("utf-8")
+        return hashlib.sha256(content).hexdigest()
 
     async def _fetch_detail(
         self, adapter: BookSourceAdapter, source_id: str

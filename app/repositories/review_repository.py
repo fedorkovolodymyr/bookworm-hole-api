@@ -145,3 +145,8 @@ class ReviewRepository:
         avg_rating: float | None = float(row[0]) if row and row[0] is not None else None
         count: int = row[1] if row else 0
         return avg_rating, count or 0
+
+    async def get_all_for_user(self, user_id: UUID) -> Sequence[Review]:
+        query = select(Review).where(col(Review.user_id) == user_id)
+        result = await self.session.execute(query)
+        return result.scalars().all()

@@ -1,29 +1,49 @@
 from fastapi import APIRouter
 
+from app.routers.admin_audit_logs import admin_audit_logs_router
+from app.routers.admin_contributions import admin_contributions_router
+from app.routers.admin_users import admin_users_router
+from app.routers.ai import ai_router
 from app.routers.auth import auth_router
 from app.routers.books import books_router
+from app.routers.chat import chat_router
 from app.routers.collections import collections_router
+from app.routers.contributions import contributions_router
 from app.routers.contributors import contributors_router
 from app.routers.external import external_router
 from app.routers.friends import friends_router
 from app.routers.health import health_router
+from app.routers.integrations import integrations_router
+from app.routers.reading_sessions import reading_sessions_router
+from app.routers.reading_stats import reading_stats_router
 from app.routers.releases import releases_router
 from app.routers.reviews import reviews_router
+from app.routers.share import share_router
 from app.routers.status_views import status_views_router
 from app.routers.statuses import statuses_router
 from app.routers.users import users_router
 
 api_v1 = APIRouter(prefix="/api/v1")
 
+api_v1.include_router(ai_router)
 api_v1.include_router(health_router)
 api_v1.include_router(books_router)
 api_v1.include_router(releases_router)
 api_v1.include_router(contributors_router)
+api_v1.include_router(contributions_router)
 api_v1.include_router(auth_router)
 api_v1.include_router(statuses_router)
 api_v1.include_router(status_views_router)
 api_v1.include_router(collections_router)
 api_v1.include_router(external_router)
 api_v1.include_router(friends_router)
+api_v1.include_router(integrations_router)
+api_v1.include_router(reading_stats_router)
 api_v1.include_router(reviews_router)
+api_v1.include_router(reading_sessions_router)
+api_v1.include_router(share_router)
 api_v1.include_router(users_router)
+api_v1.include_router(admin_users_router)
+api_v1.include_router(admin_contributions_router)
+api_v1.include_router(admin_audit_logs_router)
+api_v1.include_router(chat_router)

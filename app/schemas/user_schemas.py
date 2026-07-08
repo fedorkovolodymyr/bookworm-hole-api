@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
@@ -33,6 +34,7 @@ class UserProfileResponse(BaseModel):
     timezone: str
     is_active: bool
     is_admin: bool
+    deletion_scheduled_at: datetime | None
 
 
 class PublicUserProfileResponse(BaseModel):
@@ -41,3 +43,18 @@ class PublicUserProfileResponse(BaseModel):
     bio: str | None
     avatar_url: str | None
     collections: Page[CollectionResponse]
+
+
+class AdminUserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    email: str
+    username: str
+    display_name: str
+    is_active: bool
+    is_admin: bool
+
+
+class PasswordResetTokenResponse(BaseModel):
+    reset_token: str

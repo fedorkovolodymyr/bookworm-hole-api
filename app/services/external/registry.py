@@ -28,3 +28,7 @@ def get_adapter(name: str) -> BookSourceAdapter:
     except KeyError:
         raise AdapterNotFoundError(name) from None
     return adapter_cls()
+
+
+def get_all_adapter_names() -> list[str]:
+    return list(_registry.keys())
