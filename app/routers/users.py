@@ -9,6 +9,7 @@ from app.models.user import User
 from app.repositories.collection_repository import CollectionRepository
 from app.repositories.review_repository import ReviewRepository, ReviewSort
 from app.repositories.user_repository import UserRepository
+from app.routers.responses import CONFLICT_RESPONSE
 from app.schemas.common_schemas import Page
 from app.schemas.review_schemas import ReviewResponse
 from app.schemas.user_schemas import (
@@ -64,6 +65,28 @@ async def deactivate_own_account(
 ):
     """Soft-deactivate the account. Reversible by an admin."""
     return await service.deactivate(current_user.id)
+
+
+@users_router.post("/me/delete", response_model=UserProfileResponse)
+async def schedule_own_deletion(
+    current_user: User = Depends(get_current_user),
+    service: UserService = Depends(get_user_service),
+):
+    """Schedule account deletion. Hard-deleted after a 30-day grace period."""
+    return await service.schedule_deletion(current_user.id)
+
+
+@users_router.post(
+    "/me/delete/cancel",
+    response_model=UserProfileResponse,
+    responses=CONFLICT_RESPONSE,
+)
+async def cancel_own_deletion(
+    current_user: User = Depends(get_current_user),
+    service: UserService = Depends(get_user_service),
+):
+    """Cancel a scheduled deletion while still within the grace period."""
+    return await service.cancel_deletion(current_user.id)
 
 
 @users_router.get("/{username}", response_model=PublicUserProfileResponse)

@@ -59,3 +59,7 @@ class ErrorMessages:
     INVALID_CURRENT_PASSWORD = "Current password is incorrect"
     BOOK_NOT_FOUND = "Book not found"
     CANNOT_MERGE_BOOK_INTO_ITSELF = "Cannot merge a book into itself"
+    DELETION_NOT_SCHEDULED = "No account deletion is scheduled"
+    DELETION_GRACE_PERIOD_EXPIRED = (
+        "The grace period for cancelling account deletion has passed"
+    )

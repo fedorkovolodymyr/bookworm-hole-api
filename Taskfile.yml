@@ -194,3 +194,8 @@ tasks:
     desc: 'Manually refresh stale release metadata from external sources (e.g., task refresh-metadata -- --older-than-days 14)'
     dotenv: [".env"]
     cmd: "{{.DC}} exec api uv run python -m scripts.refresh_metadata {{.CLI_ARGS}}"
+
+  purge-deleted-users:
+    desc: Hard-delete accounts past their GDPR deletion grace period (anonymizes reviews first)
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api uv run python -m scripts.purge_deleted_users"

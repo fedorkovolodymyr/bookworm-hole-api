@@ -1,3 +1,5 @@
+from collections.abc import Sequence
+from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,3 +63,31 @@ class UserRepository:
         await self.session.commit()
         await self.session.refresh(user)
         return user
+
+    async def schedule_deletion(
+        self, user_id: UUID, scheduled_at: datetime
+    ) -> User | None:
+        user = await self.session.get(User, user_id)
+        if not user:
+            return None
+        user.deletion_scheduled_at = scheduled_at
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+    async def cancel_deletion(self, user_id: UUID) -> User | None:
+        user = await self.session.get(User, user_id)
+        if not user:
+            return None
+        user.deletion_scheduled_at = None
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+    async def get_users_pending_purge(self, cutoff: datetime) -> Sequence[User]:
+        result = await self.session.execute(
+            select(User).where(col(User.deletion_scheduled_at) <= cutoff)
+        )
+        return result.scalars().all()

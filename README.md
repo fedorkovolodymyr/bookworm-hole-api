@@ -20,3 +20,5 @@ API served at `http://localhost:${API_PORT}`, Swagger docs at `/docs`.
 All developer operations go through `task` — run `task --list` to see every available task. See [CLAUDE.md](CLAUDE.md) for the full command reference, architecture, code style, and alternative dev-environment setups (dev container / local + docker / full docker).
 
 Versioning is automated via `python-semantic-release`, driven by Conventional Commit messages — never edit `version` in `pyproject.toml` by hand. See [CLAUDE.md](CLAUDE.md#release-flow) for the bump mapping and release process.
+
+Users can self-service schedule account deletion (`POST /users/me/delete`, 30-day grace period, cancellable via `POST /users/me/delete/cancel`). Run `task purge-deleted-users` (e.g. on a scheduled job) to hard-delete accounts past their grace period.
