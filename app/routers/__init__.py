@@ -18,6 +18,7 @@ from app.routers.reading_sessions import reading_sessions_router
 from app.routers.reading_stats import reading_stats_router
 from app.routers.releases import releases_router
 from app.routers.reviews import reviews_router
+from app.routers.share import share_router
 from app.routers.status_views import status_views_router
 from app.routers.statuses import statuses_router
 from app.routers.users import users_router
@@ -40,6 +41,7 @@ api_v1.include_router(integrations_router)
 api_v1.include_router(reading_stats_router)
 api_v1.include_router(reviews_router)
 api_v1.include_router(reading_sessions_router)
+api_v1.include_router(share_router)
 api_v1.include_router(users_router)
 api_v1.include_router(admin_users_router)
 api_v1.include_router(admin_contributions_router)

@@ -89,6 +89,27 @@ class BookStatusRepository:
         result = await self.session.execute(query.offset(skip).limit(limit))
         return result.scalars().all(), total
 
+    async def get_library_for_user(
+        self,
+        user_id: UUID,
+        skip: int = 0,
+        limit: int = 10,
+    ) -> tuple[Sequence[BookStatus], int]:
+        """Get all books in a user's library (all BookStatus entries), paginated."""
+        filters = (col(BookStatus.user_id) == user_id,)
+        count_query = select(func.count()).select_from(
+            select(BookStatus.id).where(*filters).subquery()
+        )
+        total = (await self.session.execute(count_query)).scalar_one()
+
+        query = (
+            select(BookStatus)
+            .where(*filters)
+            .order_by(col(BookStatus.acquired_at).desc())
+        )
+        result = await self.session.execute(query.offset(skip).limit(limit))
+        return result.scalars().all(), total
+
     async def update(
         self, book_status_id: UUID, data: UpdateBookStatusSchema
     ) -> BookStatus | None:

@@ -33,6 +33,7 @@ class User(SQLModel, IdMixin, TimestampMixin, table=True):
     timezone: str = Field(default="UTC", max_length=64)
     is_active: bool = Field(default=True)
     is_admin: bool = Field(default=False)
+    friends_can_see_library: bool = Field(default=True)
     email_verified_at: datetime | None = Field(
         default=None,
         sa_column=Column(DateTime(timezone=True), nullable=True),
