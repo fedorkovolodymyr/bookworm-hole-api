@@ -11,6 +11,7 @@ from app.core.db import get_session
 from app.core.deps import get_current_user
 from app.models.user import User
 from app.repositories.backup_record_repository import BackupRecordRepository
+from app.repositories.backup_restore_repository import BackupRestoreRepository
 from app.repositories.book_repository import BookRepository
 from app.repositories.book_status_repository import BookStatusRepository
 from app.repositories.collection_repository import CollectionRepository
@@ -26,7 +27,11 @@ from app.routers.responses import (
     EXTERNAL_SERVICE_RESPONSE,
     NOT_FOUND_RESPONSE,
 )
-from app.schemas.backup_schemas import BackupRecordResponse
+from app.schemas.backup_schemas import (
+    BackupRecordResponse,
+    BackupRestoreReport,
+    RestoreBackupSchema,
+)
 from app.schemas.common_schemas import Page
 from app.schemas.export_schemas import AccountExportResponse
 from app.schemas.import_schemas import ImportReportSchema
@@ -37,6 +42,7 @@ from app.schemas.user_schemas import (
     UpdateUserSchema,
     UserProfileResponse,
 )
+from app.services.backup_restore_service import BackupRestoreService
 from app.services.backup_service import BackupService
 from app.services.book_status_service import BookStatusService
 from app.services.google_integration_service import GoogleIntegrationService
@@ -96,6 +102,19 @@ def get_backup_service(
         GoogleIntegrationService(GoogleIntegrationRepository(session)),
         get_export_service(current_user, session),
         BackupRecordRepository(session),
+    )
+
+
+def get_backup_restore_service(
+    session: AsyncSession = Depends(get_session),
+) -> BackupRestoreService:
+    return BackupRestoreService(
+        GoogleIntegrationService(GoogleIntegrationRepository(session)),
+        BookStatusRepository(session),
+        CollectionRepository(session),
+        ReviewRepository(session),
+        ReadingSessionRepository(session),
+        BackupRestoreRepository(session),
     )
 
 
@@ -331,3 +350,29 @@ async def list_google_drive_backup_history(
     service: BackupService = Depends(get_backup_service),
 ):
     return await service.list_history(current_user.id, skip, limit)
+
+
+@users_router.post(
+    "/me/backup/google-drive/restore",
+    response_model=BackupRestoreReport,
+    summary="Restore the account from a Google Drive backup",
+    responses=NOT_FOUND_RESPONSE | CONFLICT_RESPONSE | EXTERNAL_SERVICE_RESPONSE,
+)
+async def restore_google_drive_backup(
+    data: RestoreBackupSchema,
+    current_user: User = Depends(get_current_user),
+    service: BackupRestoreService = Depends(get_backup_restore_service),
+):
+    """Downloads the given backup file and applies it to the caller's account.
+
+    `merge` unions the backup with existing data (no duplicate statuses).
+    `replace` wipes the caller's owned data first, then writes the backup
+    fresh — it's gated behind a feature flag (off by default) and requires
+    `confirm: true`.
+
+    TODO: this is a dangerous, destructive-capable operation and per the
+    issue's technical notes should require a *recent* re-authentication, not
+    just a valid session — deferred because this repo has no re-auth flow
+    yet (same pattern as the account-deletion chat-anonymization TODO).
+    """
+    return await service.restore(current_user.id, data.file_id, data.mode, data.confirm)

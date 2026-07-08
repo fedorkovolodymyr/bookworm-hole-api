@@ -51,6 +51,9 @@ class GoogleDriveAdapter:
             self._upload_file_sync, access_token, folder_id, filename, content
         )
 
+    async def download_file(self, access_token: str, file_id: str) -> bytes:
+        return await asyncio.to_thread(self._download_file_sync, access_token, file_id)
+
     def _find_or_create_folder_sync(self, access_token: str, folder_name: str) -> str:
         service = _build_drive_service(access_token)
         escaped_name = folder_name.replace("\\", "\\\\").replace("'", "\\'")
@@ -114,3 +117,13 @@ class GoogleDriveAdapter:
         if not file_id:
             raise ExternalServiceError(ErrorMessages.GOOGLE_DRIVE_REQUEST_FAILED)
         return file_id
+
+    def _download_file_sync(self, access_token: str, file_id: str) -> bytes:
+        service = _build_drive_service(access_token)
+        try:
+            content = service.files().get_media(fileId=file_id).execute()
+        except HttpError as exc:
+            raise ExternalServiceError(
+                ErrorMessages.GOOGLE_DRIVE_REQUEST_FAILED
+            ) from exc
+        return content

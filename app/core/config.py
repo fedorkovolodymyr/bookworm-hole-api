@@ -66,6 +66,9 @@ class AppSettings(BaseSettings):
     log_level: str = "INFO"
     cors_origins: Annotated[list[str], NoDecode] = []
     database_url: str | None = None
+    # Replace-mode Google Drive restore hard-wipes the account before writing
+    # the backup back — kept opt-in for MVP until a re-auth flow exists.
+    enable_backup_replace_mode: bool = False
 
     @field_validator("cors_origins", mode="before")
     @classmethod
