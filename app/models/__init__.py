@@ -1,3 +1,4 @@
+from app.models.backup_record import BackupRecord
 from app.models.book_status import BookStatus, BookStatusKind
 from app.models.catalog import (
     ISBN,
@@ -26,6 +27,7 @@ from app.models.user import User
 
 __all__ = [
     "ISBN",
+    "BackupRecord",
     "Book",
     "BookContributor",
     "BookStatus",

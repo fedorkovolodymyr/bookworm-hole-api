@@ -11,7 +11,8 @@ dependencies = [
     "babel>=2.18.0",
     "cryptography>=49.0.0",
     "fastapi[standard]>=0.124.4",
-    "greenlet>=3.3.0",             # Required by SQLAlchemy on Apple Silicon
+    "google-api-python-client>=2.198.0",
+    "greenlet>=3.3.0",                   # Required by SQLAlchemy on Apple Silicon
     "httpx>=0.27.0",
     "itsdangerous>=2.2.0",
     "loguru>=0.7.3",
@@ -29,6 +30,7 @@ dependencies = [
 dev = [
     "coverage-badge>=1.1.0",
     "faker>=24.0.0",
+    "google-api-python-client-stubs>=1.38.0",
     "polyfactory>=2.14.0",
     "pre-commit>=4.0.0",
     "pytest>=8.0.0",
@@ -61,6 +63,16 @@ reportIncompatibleVariableOverride = "none"
 reportAssignmentType = "none"
 include = ["app", "scripts"]
 exclude = [".venv", "alembic"]
+
+[[tool.pyright.executionEnvironments]]
+# google-api-python-client-stubs types `discovery.build`'s `credentials` param as
+# `Unknown | Credentials | None` on every one of its ~700 service overloads, so any
+# reference to `build` is flagged as partially unknown regardless of call site or
+# destination annotation — a stub-package gap, not a real type-safety issue here.
+root = "app/services/external/google_drive.py"
+extraPaths = ["."]
+reportUnknownMemberType = "none"
+reportUnknownVariableType = "none"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

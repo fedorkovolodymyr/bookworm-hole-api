@@ -10,16 +10,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_session
 from app.core.deps import get_current_user
 from app.models.user import User
+from app.repositories.backup_record_repository import BackupRecordRepository
 from app.repositories.book_repository import BookRepository
 from app.repositories.book_status_repository import BookStatusRepository
 from app.repositories.collection_repository import CollectionRepository
 from app.repositories.contributor_repository import ContributorRepository
 from app.repositories.friendship_repository import FriendshipRepository
+from app.repositories.google_integration_repository import GoogleIntegrationRepository
 from app.repositories.import_repository import ImportRepository
 from app.repositories.reading_session_repository import ReadingSessionRepository
 from app.repositories.review_repository import ReviewRepository, ReviewSort
 from app.repositories.user_repository import UserRepository
-from app.routers.responses import CONFLICT_RESPONSE
+from app.routers.responses import (
+    CONFLICT_RESPONSE,
+    EXTERNAL_SERVICE_RESPONSE,
+    NOT_FOUND_RESPONSE,
+)
+from app.schemas.backup_schemas import BackupRecordResponse
 from app.schemas.common_schemas import Page
 from app.schemas.export_schemas import AccountExportResponse
 from app.schemas.import_schemas import ImportReportSchema
@@ -30,7 +37,9 @@ from app.schemas.user_schemas import (
     UpdateUserSchema,
     UserProfileResponse,
 )
+from app.services.backup_service import BackupService
 from app.services.book_status_service import BookStatusService
+from app.services.google_integration_service import GoogleIntegrationService
 from app.services.import_service import ImportService
 from app.services.review_service import ReviewService
 from app.services.user_export_service import UserExportService
@@ -76,6 +85,17 @@ def get_export_service(
         ReviewRepository(session),
         ReadingSessionRepository(session),
         FriendshipRepository(session),
+    )
+
+
+def get_backup_service(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+) -> BackupService:
+    return BackupService(
+        GoogleIntegrationService(GoogleIntegrationRepository(session)),
+        get_export_service(current_user, session),
+        BackupRecordRepository(session),
     )
 
 
@@ -282,3 +302,32 @@ async def export_account(
 ):
     """Export complete account data including profile, collections, and history."""
     return await service.export_account()
+
+
+@users_router.post(
+    "/me/backup/google-drive",
+    response_model=BackupRecordResponse,
+    summary="Back up the account export to the caller's Google Drive",
+    responses=NOT_FOUND_RESPONSE | EXTERNAL_SERVICE_RESPONSE,
+)
+async def create_google_drive_backup(
+    current_user: User = Depends(get_current_user),
+    service: BackupService = Depends(get_backup_service),
+):
+    """Uploads a JSON account export into a `HomeLibraryBackups` folder in the
+    caller's connected Google Drive, creating the folder on first use."""
+    return await service.create_backup(current_user.id)
+
+
+@users_router.get(
+    "/me/backup/google-drive/history",
+    response_model=Page[BackupRecordResponse],
+    summary="List the caller's prior Google Drive backups, newest first",
+)
+async def list_google_drive_backup_history(
+    current_user: User = Depends(get_current_user),
+    skip: int = 0,
+    limit: int = 10,
+    service: BackupService = Depends(get_backup_service),
+):
+    return await service.list_history(current_user.id, skip, limit)
