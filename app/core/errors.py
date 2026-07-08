@@ -80,3 +80,7 @@ class ErrorMessages:
     GOOGLE_TOKEN_EXCHANGE_FAILED = "Failed to exchange Google OAuth code for tokens"
     GOOGLE_TOKEN_REFRESH_FAILED = "Failed to refresh Google OAuth access token"
     INVALID_DATE_RANGE = "from_date must be before or equal to to_date"
+    CHAT_THREAD_NOT_FOUND = "Chat thread not found"
+    CANNOT_MESSAGE_SELF = "You cannot send a message to yourself"
+    NOT_FRIENDS = "You can only message your friends"
+    BLOCKED_USER = "You cannot send messages to this user"

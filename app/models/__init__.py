@@ -10,6 +10,7 @@ from app.models.catalog import (
     ReleaseContributor,
     ReleaseFormat,
 )
+from app.models.chat import ChatMessage, ChatThread
 from app.models.collection import Collection, CollectionItem
 from app.models.contribution import Contribution, ContributionKind, ContributionStatus
 from app.models.external_source import ExternalRefKind, ExternalSourceRecord
@@ -29,6 +30,8 @@ __all__ = [
     "BookContributor",
     "BookStatus",
     "BookStatusKind",
+    "ChatMessage",
+    "ChatThread",
     "Collection",
     "CollectionItem",
     "Contribution",
