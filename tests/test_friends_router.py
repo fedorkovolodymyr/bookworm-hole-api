@@ -7,6 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.deps import get_current_user
 from app.main import app
+from app.models.book_status import BookStatus, BookStatusKind
+from app.models.catalog import Book
+from app.models.collection import Collection
 from app.models.friendship import Friendship, FriendshipStatus
 from app.models.user import User
 
@@ -498,3 +501,104 @@ class TestUnblockUser:
     async def test_requires_auth(self, async_client: AsyncClient, other: User):
         response = await async_client.delete(f"/api/v1/friends/{other.id}/block")
         assert response.status_code == 401
+
+
+class TestRetrieveFriendLibrary:
+    async def test_requires_auth(self, async_client: AsyncClient, other: User):
+        response = await async_client.get(f"/api/v1/friends/{other.id}/library")
+        assert response.status_code == 401
+
+    async def test_not_friends_returns_404(
+        self, async_client: AsyncClient, owner: User, other: User
+    ):
+        response = await async_client.get(f"/api/v1/friends/{other.id}/library")
+        assert response.status_code == 404
+
+    async def test_returns_owned_books(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+        owner: User,
+        other: User,
+    ):
+        await _make_friendship(
+            db_session,
+            owner,
+            other,
+            FriendshipStatus.accepted,
+            responded_at=datetime.now(UTC),
+        )
+        book = Book(title="Dune", description="Desert planet epic")
+        db_session.add(book)
+        await db_session.flush()
+        db_session.add(
+            BookStatus(user_id=other.id, book_id=book.id, status=BookStatusKind.owned)
+        )
+        await db_session.commit()
+
+        response = await async_client.get(f"/api/v1/friends/{other.id}/library")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 1
+        assert data["items"][0]["book_id"] == str(book.id)
+
+    async def test_hidden_when_target_disables_visibility(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+        owner: User,
+        other: User,
+    ):
+        await _make_friendship(
+            db_session,
+            owner,
+            other,
+            FriendshipStatus.accepted,
+            responded_at=datetime.now(UTC),
+        )
+        other.friends_can_see_library = False
+        db_session.add(other)
+        await db_session.commit()
+
+        response = await async_client.get(f"/api/v1/friends/{other.id}/library")
+        assert response.status_code == 401
+
+
+class TestRetrieveFriendCollections:
+    async def test_requires_auth(self, async_client: AsyncClient, other: User):
+        response = await async_client.get(f"/api/v1/friends/{other.id}/collections")
+        assert response.status_code == 401
+
+    async def test_not_friends_returns_404(
+        self, async_client: AsyncClient, owner: User, other: User
+    ):
+        response = await async_client.get(f"/api/v1/friends/{other.id}/collections")
+        assert response.status_code == 404
+
+    async def test_returns_only_public_collections(
+        self,
+        async_client: AsyncClient,
+        db_session: AsyncSession,
+        owner: User,
+        other: User,
+    ):
+        await _make_friendship(
+            db_session,
+            owner,
+            other,
+            FriendshipStatus.accepted,
+            responded_at=datetime.now(UTC),
+        )
+        db_session.add(
+            Collection(user_id=other.id, name="Public Reads", is_public=True)
+        )
+        db_session.add(
+            Collection(user_id=other.id, name="Private Reads", is_public=False)
+        )
+        await db_session.commit()
+
+        response = await async_client.get(f"/api/v1/friends/{other.id}/collections")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total"] == 1
+        assert data["items"][0]["name"] == "Public Reads"
