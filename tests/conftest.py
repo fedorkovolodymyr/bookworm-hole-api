@@ -8,7 +8,6 @@ os.environ.setdefault("POSTGRES_DB", "bookwormhole_test")
 import pytest
 from alembic.config import Config
 from httpx import ASGITransport, AsyncClient
-from loguru import logger
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -38,12 +37,9 @@ async def _create_database_if_missing() -> None:
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    try:
-        asyncio.run(_create_database_if_missing())
-        alembic_cfg = Config(str(_ROOT / "alembic.ini"))
-        command.upgrade(alembic_cfg, "head")
-    except (OSError, RuntimeError) as e:
-        logger.warning(f"Database setup failed (OK for unit tests only): {e}")
+    asyncio.run(_create_database_if_missing())
+    alembic_cfg = Config(str(_ROOT / "alembic.ini"))
+    command.upgrade(alembic_cfg, "head")
 
 
 @pytest.fixture(autouse=True)
