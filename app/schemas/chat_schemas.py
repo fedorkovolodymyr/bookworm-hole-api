@@ -14,6 +14,10 @@ class ChatThreadResponse(BaseModel):
     created_at: datetime
 
 
+class StartChatThreadSchema(BaseModel):
+    recipient_id: UUID
+
+
 class ChatMessageResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

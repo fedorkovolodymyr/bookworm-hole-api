@@ -32,6 +32,21 @@ class ChatService:
         if friendship.status != FriendshipStatus.accepted:
             raise UnauthorizedError(ErrorMessages.NOT_FRIENDS)
 
+    async def get_or_create_thread(
+        self, sender_id: UUID, recipient_id: UUID
+    ) -> ChatThread:
+        """Get or create the thread between two friends, canonicalizing user order."""
+        await self._verify_friendship(sender_id, recipient_id)
+
+        thread = await self.chat_repo.get_thread_for_users(sender_id, recipient_id)
+        if thread:
+            return thread
+
+        user_a_id = min(sender_id, recipient_id)
+        user_b_id = max(sender_id, recipient_id)
+        thread = ChatThread(user_a_id=user_a_id, user_b_id=user_b_id)
+        return await self.chat_repo.create_thread(thread)
+
     async def send_message(
         self,
         sender_id: UUID,
@@ -39,16 +54,7 @@ class ChatService:
         data: SendChatMessageSchema,
     ) -> ChatMessage:
         """Send a message between friends, auto-creating thread if needed."""
-        await self._verify_friendship(sender_id, recipient_id)
-
-        # Get or create thread
-        thread = await self.chat_repo.get_thread_for_users(sender_id, recipient_id)
-        if not thread:
-            # Ensure sender_id < recipient_id for consistent threading
-            user_a_id = min(sender_id, recipient_id)
-            user_b_id = max(sender_id, recipient_id)
-            thread = ChatThread(user_a_id=user_a_id, user_b_id=user_b_id)
-            thread = await self.chat_repo.create_thread(thread)
+        thread = await self.get_or_create_thread(sender_id, recipient_id)
 
         # Create message
         now = datetime.now(UTC)
@@ -65,6 +71,26 @@ class ChatService:
         await self.chat_repo.update_thread_last_message(thread.id, now)
 
         return message
+
+    async def send_message_to_thread(
+        self,
+        thread_id: UUID,
+        sender_id: UUID,
+        data: SendChatMessageSchema,
+    ) -> ChatMessage:
+        """Send a message to an existing thread, deriving the recipient from it."""
+        thread = await self.chat_repo.get_thread_by_id(thread_id)
+        if not thread:
+            raise NotFoundError(ErrorMessages.CHAT_THREAD_NOT_FOUND)
+
+        if thread.user_a_id == sender_id:
+            recipient_id = thread.user_b_id
+        elif thread.user_b_id == sender_id:
+            recipient_id = thread.user_a_id
+        else:
+            raise NotFoundError(ErrorMessages.CHAT_THREAD_NOT_FOUND)
+
+        return await self.send_message(sender_id, recipient_id, data)
 
     async def list_threads(self, user_id: UUID) -> Sequence[ChatThread]:
         """List all chat threads for a user."""

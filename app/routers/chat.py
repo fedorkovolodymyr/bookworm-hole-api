@@ -5,14 +5,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
 from app.core.deps import get_current_user
-from app.core.errors import NotFoundError
 from app.models.user import User
 from app.repositories.chat_repository import ChatRepository
 from app.repositories.friendship_repository import FriendshipRepository
+from app.routers.responses import NOT_FOUND_RESPONSE
 from app.schemas.chat_schemas import (
     ChatMessageResponse,
+    ChatThreadResponse,
     ChatThreadWithLastMessageResponse,
     SendChatMessageSchema,
+    StartChatThreadSchema,
 )
 from app.services.chat_service import ChatService
 
@@ -51,8 +53,20 @@ async def list_chat_threads(
     return result
 
 
+@chat_router.post("/threads", response_model=ChatThreadResponse)
+async def start_chat_thread(
+    data: StartChatThreadSchema,
+    current_user: User = Depends(get_current_user),
+    service: ChatService = Depends(get_chat_service),
+):
+    """Get or create the thread with a friend, auto-creating it on first contact."""
+    return await service.get_or_create_thread(current_user.id, data.recipient_id)
+
+
 @chat_router.get(
-    "/threads/{thread_id}/messages", response_model=list[ChatMessageResponse]
+    "/threads/{thread_id}/messages",
+    response_model=list[ChatMessageResponse],
+    responses=NOT_FOUND_RESPONSE,
 )
 async def get_thread_messages(
     thread_id: UUID,
@@ -65,7 +79,11 @@ async def get_thread_messages(
     return await service.get_messages(thread_id, current_user.id, before, limit)
 
 
-@chat_router.post("/threads/{thread_id}/messages", response_model=ChatMessageResponse)
+@chat_router.post(
+    "/threads/{thread_id}/messages",
+    response_model=ChatMessageResponse,
+    responses=NOT_FOUND_RESPONSE,
+)
 async def send_message_to_thread(
     thread_id: UUID,
     data: SendChatMessageSchema,
@@ -73,22 +91,14 @@ async def send_message_to_thread(
     service: ChatService = Depends(get_chat_service),
 ):
     """Send a message to an existing thread."""
-    thread = await service.chat_repo.get_thread_by_id(thread_id)
-    if not thread:
-        raise NotFoundError("Chat thread not found")
-
-    # Determine recipient from thread
-    if thread.user_a_id == current_user.id:
-        recipient_id = thread.user_b_id
-    elif thread.user_b_id == current_user.id:
-        recipient_id = thread.user_a_id
-    else:
-        raise NotFoundError("Chat thread not found")
-
-    return await service.send_message(current_user.id, recipient_id, data)
+    return await service.send_message_to_thread(thread_id, current_user.id, data)
 
 
-@chat_router.post("/threads/{thread_id}/read", status_code=status.HTTP_204_NO_CONTENT)
+@chat_router.post(
+    "/threads/{thread_id}/read",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=NOT_FOUND_RESPONSE,
+)
 async def mark_thread_read(
     thread_id: UUID,
     current_user: User = Depends(get_current_user),
