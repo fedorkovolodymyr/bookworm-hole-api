@@ -27,6 +27,8 @@ class FakeFilesResource:
         create_result: dict | None = None,
         list_exc: Exception | None = None,
         create_exc: Exception | None = None,
+        media_content: bytes | None = None,
+        get_media_exc: Exception | None = None,
     ) -> None:
         self.existing_folders = existing_folders or []
         self.create_result = (
@@ -34,8 +36,11 @@ class FakeFilesResource:
         )
         self.list_exc = list_exc
         self.create_exc = create_exc
+        self.media_content = media_content
+        self.get_media_exc = get_media_exc
         self.list_calls: list[dict] = []
         self.create_calls: list[dict] = []
+        self.get_media_calls: list[dict] = []
 
     def list(self, **kwargs) -> FakeExecutable:
         self.list_calls.append(kwargs)
@@ -48,6 +53,12 @@ class FakeFilesResource:
         if self.create_exc is not None:
             return FakeExecutable(exc=self.create_exc)
         return FakeExecutable(self.create_result)
+
+    def get_media(self, **kwargs) -> FakeExecutable:
+        self.get_media_calls.append(kwargs)
+        if self.get_media_exc is not None:
+            return FakeExecutable(exc=self.get_media_exc)
+        return FakeExecutable(self.media_content)
 
 
 class FakeDriveService:
@@ -163,3 +174,31 @@ class TestUploadFile:
 
         with pytest.raises(ExternalServiceError):
             await adapter.upload_file("token", "folder-id", "backup.json", b"{}")
+
+
+class TestDownloadFile:
+    async def test_returns_file_bytes(self, monkeypatch):
+        files = FakeFilesResource(media_content=b'{"export_version": 1}')
+        monkeypatch.setattr(
+            google_drive.googleapiclient.discovery,
+            "build",
+            lambda *a, **kw: FakeDriveService(files),
+        )
+        adapter = google_drive.GoogleDriveAdapter()
+
+        content = await adapter.download_file("token", "file-id")
+
+        assert content == b'{"export_version": 1}'
+        assert files.get_media_calls == [{"fileId": "file-id"}]
+
+    async def test_raises_external_service_error_on_download_failure(self, monkeypatch):
+        files = FakeFilesResource(get_media_exc=_http_error())
+        monkeypatch.setattr(
+            google_drive.googleapiclient.discovery,
+            "build",
+            lambda *a, **kw: FakeDriveService(files),
+        )
+        adapter = google_drive.GoogleDriveAdapter()
+
+        with pytest.raises(ExternalServiceError):
+            await adapter.download_file("token", "file-id")

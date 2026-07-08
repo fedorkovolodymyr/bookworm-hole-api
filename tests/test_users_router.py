@@ -25,8 +25,19 @@ from app.models.collection import Collection
 from app.models.google_integration import GoogleIntegration
 from app.models.user import User
 from app.repositories.backup_record_repository import BackupRecordRepository
+from app.repositories.backup_restore_repository import BackupRestoreRepository
+from app.repositories.book_status_repository import BookStatusRepository
+from app.repositories.collection_repository import CollectionRepository
 from app.repositories.google_integration_repository import GoogleIntegrationRepository
-from app.routers.users import get_backup_service, get_export_service
+from app.repositories.reading_session_repository import ReadingSessionRepository
+from app.repositories.review_repository import ReviewRepository
+from app.routers.users import (
+    get_backup_restore_service,
+    get_backup_service,
+    get_export_service,
+)
+from app.schemas.export_schemas import AccountExportResponse, ExportUserResponse
+from app.services.backup_restore_service import BackupRestoreService
 from app.services.backup_service import BackupService
 from app.services.google_integration_service import GoogleIntegrationService
 from app.services.security import hash_password, verify_password
@@ -569,3 +580,121 @@ class TestGoogleDriveBackupHistory:
         assert body["items"][0]["id"] == second.json()["id"]
         assert body["items"][0]["drive_file_id"] == second.json()["drive_file_id"]
         assert first.json()["id"] != second.json()["id"]
+
+
+class FakeRestoreDriveAdapter:
+    def __init__(self, content: bytes) -> None:
+        self.content = content
+        self.downloads: list[tuple[str, str]] = []
+
+    async def download_file(self, access_token: str, file_id: str) -> bytes:
+        self.downloads.append((access_token, file_id))
+        return self.content
+
+
+@pytest.fixture
+async def fake_restore_drive_adapter(
+    owner: User,
+) -> AsyncIterator[FakeRestoreDriveAdapter]:
+    export = AccountExportResponse(
+        export_version=1,
+        user=ExportUserResponse.model_validate(owner),
+        collections=[],
+        statuses=[],
+        reviews=[],
+        reading_sessions=[],
+        friends=[],
+    )
+    adapter = FakeRestoreDriveAdapter(export.model_dump_json().encode("utf-8"))
+
+    def _get_backup_restore_service(
+        session: AsyncSession = Depends(get_session),
+    ) -> BackupRestoreService:
+        return BackupRestoreService(
+            GoogleIntegrationService(GoogleIntegrationRepository(session)),
+            BookStatusRepository(session),
+            CollectionRepository(session),
+            ReviewRepository(session),
+            ReadingSessionRepository(session),
+            BackupRestoreRepository(session),
+            adapter,
+        )
+
+    app.dependency_overrides[get_backup_restore_service] = _get_backup_restore_service
+    yield adapter
+    app.dependency_overrides.pop(get_backup_restore_service, None)
+
+
+class TestRestoreGoogleDriveBackup:
+    async def test_requires_auth(self, async_client: AsyncClient):
+        response = await async_client.post(
+            "/api/v1/users/me/backup/google-drive/restore",
+            json={"file_id": "file-id", "mode": "merge"},
+        )
+        assert response.status_code == 401
+
+    async def test_no_integration_raises_not_found(
+        self,
+        async_client: AsyncClient,
+        owner: User,
+        fake_restore_drive_adapter: FakeRestoreDriveAdapter,
+    ):
+        response = await async_client.post(
+            "/api/v1/users/me/backup/google-drive/restore",
+            json={"file_id": "file-id", "mode": "merge"},
+        )
+        assert response.status_code == 404
+
+    async def test_merge_restores_backup(
+        self,
+        async_client: AsyncClient,
+        owner: User,
+        google_integration: GoogleIntegration,
+        fake_restore_drive_adapter: FakeRestoreDriveAdapter,
+    ):
+        response = await async_client.post(
+            "/api/v1/users/me/backup/google-drive/restore",
+            json={"file_id": "file-id", "mode": "merge"},
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["mode"] == "merge"
+        assert body["collections"] == {"created": 0, "updated": 0, "skipped": 0}
+        assert "owner-access-token" not in response.text
+        assert fake_restore_drive_adapter.downloads == [
+            ("owner-access-token", "file-id")
+        ]
+
+    async def test_replace_rejected_when_feature_flag_disabled(
+        self,
+        async_client: AsyncClient,
+        owner: User,
+        google_integration: GoogleIntegration,
+        fake_restore_drive_adapter: FakeRestoreDriveAdapter,
+    ):
+        response = await async_client.post(
+            "/api/v1/users/me/backup/google-drive/restore",
+            json={"file_id": "file-id", "mode": "replace", "confirm": True},
+        )
+        assert response.status_code == 409
+
+    async def test_replace_rejected_without_confirm(
+        self,
+        async_client: AsyncClient,
+        owner: User,
+        google_integration: GoogleIntegration,
+        fake_restore_drive_adapter: FakeRestoreDriveAdapter,
+        monkeypatch: pytest.MonkeyPatch,
+    ):
+        import app.core.config as config_module
+
+        monkeypatch.setattr(
+            config_module.settings.app_settings, "enable_backup_replace_mode", True
+        )
+
+        response = await async_client.post(
+            "/api/v1/users/me/backup/google-drive/restore",
+            json={"file_id": "file-id", "mode": "replace", "confirm": False},
+        )
+        assert response.status_code == 409

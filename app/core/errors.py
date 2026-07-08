@@ -89,3 +89,5 @@ class ErrorMessages:
         "The grace period for cancelling account deletion has passed"
     )
     GOOGLE_DRIVE_REQUEST_FAILED = "Google Drive request failed"
+    BACKUP_REPLACE_MODE_DISABLED = "Replace-mode restore is disabled"
+    BACKUP_REPLACE_CONFIRMATION_REQUIRED = "Replace-mode restore requires confirm=true"
