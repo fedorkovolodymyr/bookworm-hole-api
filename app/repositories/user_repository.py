@@ -75,11 +75,33 @@ class UserRepository:
         await self.session.refresh(user)
         return user
 
+    async def schedule_deletion(
+        self, user_id: UUID, scheduled_at: datetime
+    ) -> User | None:
+        user = await self.session.get(User, user_id)
+        if not user:
+            return None
+        user.deletion_scheduled_at = scheduled_at
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
     async def activate(self, user_id: UUID) -> User | None:
         user = await self.session.get(User, user_id)
         if not user:
             return None
         user.is_active = True
+        self.session.add(user)
+        await self.session.commit()
+        await self.session.refresh(user)
+        return user
+
+    async def cancel_deletion(self, user_id: UUID) -> User | None:
+        user = await self.session.get(User, user_id)
+        if not user:
+            return None
+        user.deletion_scheduled_at = None
         self.session.add(user)
         await self.session.commit()
         await self.session.refresh(user)
@@ -137,3 +159,9 @@ class UserRepository:
         result = await self.session.execute(base_query.offset(skip).limit(limit))
         users = result.scalars().all()
         return users, total
+
+    async def get_users_pending_purge(self, cutoff: datetime) -> Sequence[User]:
+        result = await self.session.execute(
+            select(User).where(col(User.deletion_scheduled_at) <= cutoff)
+        )
+        return result.scalars().all()

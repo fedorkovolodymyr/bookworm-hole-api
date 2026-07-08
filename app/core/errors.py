@@ -84,3 +84,7 @@ class ErrorMessages:
     CANNOT_MESSAGE_SELF = "You cannot send a message to yourself"
     NOT_FRIENDS = "You can only message your friends"
     BLOCKED_USER = "You cannot send messages to this user"
+    DELETION_NOT_SCHEDULED = "No account deletion is scheduled"
+    DELETION_GRACE_PERIOD_EXPIRED = (
+        "The grace period for cancelling account deletion has passed"
+    )

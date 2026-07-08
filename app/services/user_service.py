@@ -1,9 +1,14 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import jwt
 
-from app.core.errors import ErrorMessages, NotFoundError, UnauthorizedError
+from app.core.errors import (
+    ConflictError,
+    ErrorMessages,
+    NotFoundError,
+    UnauthorizedError,
+)
 from app.core.security import create_password_reset_token, decode_token
 from app.models.password_reset_token import PasswordResetToken
 from app.models.user import User
@@ -22,6 +27,8 @@ from app.schemas.user_schemas import (
     UpdateUserSchema,
 )
 from app.services.security import hash_password, verify_password
+
+DELETION_GRACE_PERIOD_DAYS = 30
 
 
 class UserService:
@@ -58,6 +65,26 @@ class UserService:
         if not user:
             raise NotFoundError(ErrorMessages.USER_NOT_FOUND)
         return user
+
+    async def schedule_deletion(self, user_id: UUID) -> User:
+        scheduled_at = datetime.now(UTC) + timedelta(days=DELETION_GRACE_PERIOD_DAYS)
+        user = await self.user_repository.schedule_deletion(user_id, scheduled_at)
+        if not user:
+            raise NotFoundError(ErrorMessages.USER_NOT_FOUND)
+        return user
+
+    async def cancel_deletion(self, user_id: UUID) -> User:
+        user = await self.user_repository.get_by_id(user_id)
+        if not user:
+            raise NotFoundError(ErrorMessages.USER_NOT_FOUND)
+        if user.deletion_scheduled_at is None:
+            raise ConflictError(ErrorMessages.DELETION_NOT_SCHEDULED)
+        if user.deletion_scheduled_at <= datetime.now(UTC):
+            raise ConflictError(ErrorMessages.DELETION_GRACE_PERIOD_EXPIRED)
+        cancelled = await self.user_repository.cancel_deletion(user_id)
+        if not cancelled:
+            raise NotFoundError(ErrorMessages.USER_NOT_FOUND)
+        return cancelled
 
     async def get_public_profile(
         self, username: str, skip: int = 0, limit: int = 10

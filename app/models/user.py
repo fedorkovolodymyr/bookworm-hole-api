@@ -37,3 +37,6 @@ class User(SQLModel, IdMixin, TimestampMixin, table=True):
         default=None,
         sa_column=Column(DateTime(timezone=True), nullable=True),
     )
+    deletion_scheduled_at: datetime | None = Field(
+        default=None, sa_column=Column(DateTime(timezone=True), nullable=True)
+    )

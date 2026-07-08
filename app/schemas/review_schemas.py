@@ -34,7 +34,7 @@ class ReviewResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
-    user_id: UUID
+    user_id: UUID | None
     book_id: UUID | None
     release_id: UUID | None
     rating: int | None

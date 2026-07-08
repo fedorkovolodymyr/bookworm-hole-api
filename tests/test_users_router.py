@@ -1,6 +1,6 @@
 import csv
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from io import StringIO
 
 import pytest
@@ -183,6 +183,60 @@ class TestDeactivateAccount:
         response = await async_client.post("/api/v1/users/me/deactivate")
         assert response.status_code == 200
         assert response.json()["is_active"] is False
+
+
+class TestScheduleDeletion:
+    async def test_requires_auth(self, async_client: AsyncClient):
+        response = await async_client.post("/api/v1/users/me/delete")
+        assert response.status_code == 401
+
+    async def test_schedules_deletion(self, async_client: AsyncClient, owner: User):
+        before = datetime.now(UTC)
+        response = await async_client.post("/api/v1/users/me/delete")
+        assert response.status_code == 200
+        body = response.json()
+        scheduled_at = datetime.fromisoformat(body["deletion_scheduled_at"])
+        assert 29 <= (scheduled_at - before).days <= 30
+
+    async def test_rescheduling_extends_grace_period(
+        self, async_client: AsyncClient, owner: User
+    ):
+        first = await async_client.post("/api/v1/users/me/delete")
+        second = await async_client.post("/api/v1/users/me/delete")
+        assert second.status_code == 200
+        first_at = datetime.fromisoformat(first.json()["deletion_scheduled_at"])
+        second_at = datetime.fromisoformat(second.json()["deletion_scheduled_at"])
+        assert second_at >= first_at
+
+
+class TestCancelDeletion:
+    async def test_requires_auth(self, async_client: AsyncClient):
+        response = await async_client.post("/api/v1/users/me/delete/cancel")
+        assert response.status_code == 401
+
+    async def test_cancels_scheduled_deletion(
+        self, async_client: AsyncClient, owner: User
+    ):
+        await async_client.post("/api/v1/users/me/delete")
+        response = await async_client.post("/api/v1/users/me/delete/cancel")
+        assert response.status_code == 200
+        assert response.json()["deletion_scheduled_at"] is None
+
+    async def test_rejects_when_nothing_scheduled(
+        self, async_client: AsyncClient, owner: User
+    ):
+        response = await async_client.post("/api/v1/users/me/delete/cancel")
+        assert response.status_code == 409
+
+    async def test_rejects_when_grace_period_expired(
+        self, async_client: AsyncClient, owner: User, db_session: AsyncSession
+    ):
+        owner.deletion_scheduled_at = datetime.now(UTC) - timedelta(days=1)
+        db_session.add(owner)
+        await db_session.commit()
+
+        response = await async_client.post("/api/v1/users/me/delete/cancel")
+        assert response.status_code == 409
 
 
 class TestRetrievePublicProfile:
