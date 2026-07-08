@@ -1,9 +1,13 @@
+from collections.abc import AsyncIterator
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.audit_context import audit_as
 from app.core.config import Settings, get_settings
 from app.core.db import get_session
+from app.models.entity_version import ChangeSource
 from app.models.user import User
 from app.repositories.reading_stats_repository import ReadingStatsRepository
 from app.repositories.refresh_token_repository import RefreshTokenRepository
@@ -50,10 +54,13 @@ async def get_current_user_optional(
     return await auth_service.get_current_user(credentials.credentials)
 
 
-async def require_admin(current_user: User = Depends(get_current_user)) -> User:
+async def require_admin(
+    current_user: User = Depends(get_current_user),
+) -> AsyncIterator[User]:
     if not current_user.is_admin:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Admin privileges required")
-    return current_user
+    with audit_as(ChangeSource.admin, current_user.id):
+        yield current_user
 
 
 def get_ai_provider() -> AIProvider:

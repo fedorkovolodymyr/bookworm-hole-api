@@ -72,3 +72,42 @@ class ContributionRepository:
         )
         result = await self.session.execute(query.offset(skip).limit(limit))
         return result.scalars().all(), total
+
+    async def list_by_status(
+        self, status: ContributionStatus, skip: int = 0, limit: int = 10
+    ) -> tuple[Sequence[Contribution], int]:
+        count_query = select(func.count()).select_from(
+            select(Contribution.id).where(col(Contribution.status) == status).subquery()
+        )
+        total = (await self.session.execute(count_query)).scalar_one()
+        query = (
+            select(Contribution)
+            .where(col(Contribution.status) == status)
+            .order_by(col(Contribution.created_at).desc())
+        )
+        result = await self.session.execute(query.offset(skip).limit(limit))
+        return result.scalars().all(), total
+
+    async def update_reviewer(
+        self, contribution_id: UUID, reviewer_id: UUID
+    ) -> Contribution | None:
+        contribution = await self.session.get(Contribution, contribution_id)
+        if not contribution:
+            return None
+        contribution.reviewer_id = reviewer_id
+        self.session.add(contribution)
+        await self.session.commit()
+        await self.session.refresh(contribution)
+        return contribution
+
+    async def update_review_notes(
+        self, contribution_id: UUID, notes: str
+    ) -> Contribution | None:
+        contribution = await self.session.get(Contribution, contribution_id)
+        if not contribution:
+            return None
+        contribution.review_notes = notes
+        self.session.add(contribution)
+        await self.session.commit()
+        await self.session.refresh(contribution)
+        return contribution

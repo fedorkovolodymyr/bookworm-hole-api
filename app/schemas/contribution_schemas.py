@@ -32,3 +32,35 @@ class ContributionResponse(BaseModel):
     review_notes: str | None
     created_at: datetime
     updated_at: datetime
+
+
+class ApproveContributionSchema(BaseModel):
+    """Body for approving a contribution — empty for now, extensible later."""
+
+    pass
+
+
+class RejectContributionSchema(BaseModel):
+    notes: str
+
+
+class AdminContributionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    user_id: UUID
+    kind: ContributionKind
+    target_id: UUID | None
+    payload: dict[str, Any]
+    status: ContributionStatus
+    reviewer_id: UUID | None
+    review_notes: str | None
+    created_at: datetime
+    updated_at: datetime
+    warnings: list[str] = []
+
+
+class ContributionDiffResponse(BaseModel):
+    proposed: dict[str, Any]
+    current: dict[str, Any] | None
+    warnings: list[str] = []

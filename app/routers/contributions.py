@@ -7,6 +7,7 @@ from app.core.db import get_session
 from app.core.deps import get_current_user
 from app.models.user import User
 from app.repositories.contribution_repository import ContributionRepository
+from app.routers.responses import CONFLICT_RESPONSE, NOT_FOUND_RESPONSE
 from app.schemas.common_schemas import Page
 from app.schemas.contribution_schemas import (
     ContributionResponse,
@@ -47,7 +48,11 @@ async def list_own_contributions(
     return await service.list_own(current_user.id, skip, limit)
 
 
-@contributions_router.get("/{contribution_id}", response_model=ContributionResponse)
+@contributions_router.get(
+    "/{contribution_id}",
+    response_model=ContributionResponse,
+    responses=NOT_FOUND_RESPONSE,
+)
 async def get_contribution(
     contribution_id: UUID,
     current_user: User = Depends(get_current_user),
@@ -56,7 +61,11 @@ async def get_contribution(
     return await service.get_contribution(current_user.id, contribution_id)
 
 
-@contributions_router.patch("/{contribution_id}", response_model=ContributionResponse)
+@contributions_router.patch(
+    "/{contribution_id}",
+    response_model=ContributionResponse,
+    responses=NOT_FOUND_RESPONSE | CONFLICT_RESPONSE,
+)
 async def update_contribution(
     contribution_id: UUID,
     data: UpdateContributionSchema,
@@ -67,7 +76,9 @@ async def update_contribution(
 
 
 @contributions_router.post(
-    "/{contribution_id}/submit", response_model=ContributionResponse
+    "/{contribution_id}/submit",
+    response_model=ContributionResponse,
+    responses=NOT_FOUND_RESPONSE | CONFLICT_RESPONSE,
 )
 async def submit_contribution(
     contribution_id: UUID,
@@ -78,7 +89,9 @@ async def submit_contribution(
 
 
 @contributions_router.delete(
-    "/{contribution_id}", status_code=status.HTTP_204_NO_CONTENT
+    "/{contribution_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=NOT_FOUND_RESPONSE | CONFLICT_RESPONSE,
 )
 async def delete_contribution(
     contribution_id: UUID,

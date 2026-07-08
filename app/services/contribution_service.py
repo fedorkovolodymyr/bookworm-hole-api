@@ -5,9 +5,12 @@ from app.models.contribution import Contribution, ContributionStatus
 from app.repositories.contribution_repository import ContributionRepository
 from app.schemas.common_schemas import Page
 from app.schemas.contribution_schemas import (
+    AdminContributionResponse,
+    ContributionDiffResponse,
     CreateContributionSchema,
     UpdateContributionSchema,
 )
+from app.services.moderation.rules import default_rules, run_rules
 
 
 class ContributionService:
@@ -82,3 +85,77 @@ class ContributionService:
     ) -> Page[Contribution]:
         items, total = await self.repository.list_by_user(user_id, skip, limit)
         return Page(items=list(items), total=total, limit=limit, offset=skip)
+
+    async def list_by_status(
+        self, status: ContributionStatus, skip: int = 0, limit: int = 10
+    ) -> Page[AdminContributionResponse]:
+        items, total = await self.repository.list_by_status(status, skip, limit)
+        rules = default_rules(self.repository.session)
+        responses = [
+            AdminContributionResponse.model_validate(item).model_copy(
+                update={"warnings": await run_rules(item, rules)}
+            )
+            for item in items
+        ]
+        return Page(items=responses, total=total, limit=limit, offset=skip)
+
+    async def claim_contribution(
+        self, contribution_id: UUID, reviewer_id: UUID
+    ) -> Contribution:
+        contribution = await self.repository.get_by_id(contribution_id)
+        if not contribution:
+            raise NotFoundError(ErrorMessages.CONTRIBUTION_NOT_FOUND)
+        if contribution.status != ContributionStatus.submitted:
+            raise ConflictError(ErrorMessages.CONTRIBUTION_NOT_SUBMITTED)
+        updated = await self.repository.update_reviewer(contribution_id, reviewer_id)
+        if not updated:
+            raise NotFoundError(ErrorMessages.CONTRIBUTION_NOT_FOUND)
+        updated = await self.repository.update_status(
+            contribution_id, ContributionStatus.under_review
+        )
+        if not updated:
+            raise NotFoundError(ErrorMessages.CONTRIBUTION_NOT_FOUND)
+        return updated
+
+    async def reject_contribution(
+        self, contribution_id: UUID, notes: str
+    ) -> Contribution:
+        contribution = await self.repository.get_by_id(contribution_id)
+        if not contribution:
+            raise NotFoundError(ErrorMessages.CONTRIBUTION_NOT_FOUND)
+        if contribution.status != ContributionStatus.under_review:
+            raise ConflictError(ErrorMessages.CONTRIBUTION_NOT_UNDER_REVIEW)
+        updated = await self.repository.update_review_notes(contribution_id, notes)
+        if not updated:
+            raise NotFoundError(ErrorMessages.CONTRIBUTION_NOT_FOUND)
+        updated = await self.repository.update_status(
+            contribution_id, ContributionStatus.rejected
+        )
+        if not updated:
+            raise NotFoundError(ErrorMessages.CONTRIBUTION_NOT_FOUND)
+        return updated
+
+    async def approve_contribution(self, contribution_id: UUID) -> Contribution:
+        contribution = await self.repository.get_by_id(contribution_id)
+        if not contribution:
+            raise NotFoundError(ErrorMessages.CONTRIBUTION_NOT_FOUND)
+        if contribution.status != ContributionStatus.under_review:
+            raise ConflictError(ErrorMessages.CONTRIBUTION_NOT_UNDER_REVIEW)
+        updated = await self.repository.update_status(
+            contribution_id, ContributionStatus.merged
+        )
+        if not updated:
+            raise NotFoundError(ErrorMessages.CONTRIBUTION_NOT_FOUND)
+        return updated
+
+    async def get_diff(self, contribution_id: UUID) -> ContributionDiffResponse:
+        contribution = await self.repository.get_by_id(contribution_id)
+        if not contribution:
+            raise NotFoundError(ErrorMessages.CONTRIBUTION_NOT_FOUND)
+        rules = default_rules(self.repository.session)
+        warnings = await run_rules(contribution, rules)
+        return ContributionDiffResponse(
+            proposed=contribution.payload,
+            current=None,
+            warnings=warnings,
+        )
