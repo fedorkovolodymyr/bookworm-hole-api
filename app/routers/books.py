@@ -5,7 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
 from app.core.deps import require_admin
+from app.models.entity_version import EntityType
 from app.repositories.book_repository import BookRepository
+from app.repositories.entity_version_repository import EntityVersionRepository
 from app.repositories.review_repository import ReviewRepository, ReviewSort
 from app.routers.responses import ADMIN_RESPONSES, CONFLICT_RESPONSE, NOT_FOUND_RESPONSE
 from app.schemas.book_schemas import (
@@ -15,8 +17,13 @@ from app.schemas.book_schemas import (
     UpdateBookSchema,
 )
 from app.schemas.common_schemas import Page
+from app.schemas.entity_version_schemas import (
+    EntityVersionDetailResponse,
+    EntityVersionResponse,
+)
 from app.schemas.review_schemas import ReviewResponse
 from app.services.book_service import BookService
+from app.services.entity_version_service import EntityVersionService
 from app.services.review_service import ReviewService
 
 books_router = APIRouter(prefix="/books", tags=["books"])
@@ -30,6 +37,12 @@ def get_review_service(
     session: AsyncSession = Depends(get_session),
 ) -> ReviewService:
     return ReviewService(ReviewRepository(session))
+
+
+def get_entity_version_service(
+    session: AsyncSession = Depends(get_session),
+) -> EntityVersionService:
+    return EntityVersionService(EntityVersionRepository(session))
 
 
 @books_router.get("/", response_model=Page[BookResponse])
@@ -126,3 +139,27 @@ async def retrieve_book_reviews(
     service: ReviewService = Depends(get_review_service),
 ):
     return await service.list_for_book(book_id, sort, skip, limit)
+
+
+@books_router.get("/{book_id}/history", response_model=Page[EntityVersionResponse])
+async def retrieve_book_history(
+    book_id: UUID,
+    skip: int = 0,
+    limit: int = 10,
+    service: EntityVersionService = Depends(get_entity_version_service),
+):
+    return await service.list_history(EntityType.book, book_id, skip, limit)
+
+
+@books_router.get(
+    "/{book_id}/history/{version}",
+    response_model=EntityVersionDetailResponse,
+    responses=NOT_FOUND_RESPONSE,
+    summary="Get a specific book version snapshot",
+)
+async def retrieve_book_history_version(
+    book_id: UUID,
+    version: int,
+    service: EntityVersionService = Depends(get_entity_version_service),
+):
+    return await service.get_version(EntityType.book, book_id, version)

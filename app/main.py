@@ -7,6 +7,9 @@ from app.core.errors import AppError
 from app.core.lifespan import lifespan
 from app.core.middleware import RequestLoggingMiddleware
 from app.routers import api_v1
+from app.services.entity_version_listeners import register_listeners
+
+register_listeners()
 
 app = FastAPI(lifespan=lifespan)
 

@@ -70,3 +70,4 @@ class ErrorMessages:
     READING_SESSION_NOT_FOUND = "Reading session not found"
     READING_SESSION_ALREADY_ACTIVE = "Reading session already active for this release"
     READING_SESSION_NOT_ACTIVE = "No active reading session for this release"
+    ENTITY_VERSION_NOT_FOUND = "Entity version not found"
