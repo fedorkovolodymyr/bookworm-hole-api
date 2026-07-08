@@ -40,9 +40,10 @@ class EntityVersion(SQLModel, IdMixin, table=True):
     entity_id: uuid.UUID = Field(index=True)
     version_number: int = Field()
     snapshot: dict[str, Any] = Field(sa_column=Column(JSONB, nullable=False))
-    changed_by_user_id: uuid.UUID | None = Field(
-        default=None, foreign_key="user.id", index=True
-    )
+    # No FK to user.id: an audit trail must survive user deletion (see GDPR
+    # account-deletion flow) and record actors from non-request contexts
+    # (external_sync/system) that may not correspond to a persisted user row.
+    changed_by_user_id: uuid.UUID | None = Field(default=None, index=True)
     change_source: ChangeSource = Field(
         sa_column=Column(SAEnum(ChangeSource), nullable=False)
     )

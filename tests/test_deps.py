@@ -49,12 +49,12 @@ async def test_require_admin_passes_for_admin():
         display_name="Admin",
         is_admin=True,
     )
-    result = await require_admin(current_user=admin)
+    result = await anext(require_admin(current_user=admin))
     assert result is admin
 
 
 async def test_require_admin_raises_for_non_admin():
     user = User(email="reader@example.com", username="reader", display_name="Reader")
     with pytest.raises(HTTPException) as exc_info:
-        await require_admin(current_user=user)
+        await anext(require_admin(current_user=user))
     assert exc_info.value.status_code == 403

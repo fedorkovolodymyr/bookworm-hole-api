@@ -49,10 +49,6 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.ForeignKeyConstraint(
-            ["changed_by_user_id"],
-            ["user.id"],
-        ),
-        sa.ForeignKeyConstraint(
             ["contribution_id"],
             ["contribution.id"],
         ),

@@ -137,10 +137,18 @@ class TestRunRules:
 
 @pytest.fixture
 async def submitted_contribution(db_session: AsyncSession) -> Contribution:
-    from uuid import uuid4
+    from app.models.user import User
+
+    user = User(
+        email="contributor@example.com",
+        username="contributor",
+        display_name="Contributor",
+    )
+    db_session.add(user)
+    await db_session.flush()
 
     contribution = Contribution(
-        user_id=uuid4(),
+        user_id=user.id,
         kind=ContributionKind.new_book,
         target_id=None,
         payload={"title": "Dune"},
@@ -157,7 +165,7 @@ class TestAdminQueueIncludesWarnings:
         self, admin_client, submitted_contribution: Contribution
     ):
         response = await admin_client.get(
-            "/api/v1/admin/contributions?status=submitted"
+            "/api/v1/admin/contributions/?status=submitted"
         )
         assert response.status_code == 200
         data = response.json()
