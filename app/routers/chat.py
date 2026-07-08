@@ -126,7 +126,7 @@ async def mark_thread_read(
     await service.mark_thread_read(thread_id, current_user.id)
 
 
-async def _authenticate_from_query(token: str) -> UUID | None:
+def _decode_user_from_token(token: str) -> UUID | None:
     try:
         payload = decode_token(token)
         return UUID(payload.get("sub", ""))
@@ -135,22 +135,10 @@ async def _authenticate_from_query(token: str) -> UUID | None:
         return None
 
 
-async def _authenticate_from_message(
-    message: dict[str, Any],
-) -> UUID | None:
-    try:
-        token = message.get("token", "")
-        payload = decode_token(token)
-        return UUID(payload.get("sub", ""))
-    except (jwt.PyJWTError, ValueError) as e:
-        logger.debug(f"First-message auth failed: {e}")
-        return None
-
-
 async def _authenticate(websocket: WebSocket, token: str | None) -> UUID | None:
     """Authenticate via query param token, or via a first `authenticate` message."""
     if token:
-        return await _authenticate_from_query(token)
+        return _decode_user_from_token(token)
 
     try:
         data = await asyncio.wait_for(websocket.receive_text(), timeout=10.0)
@@ -160,7 +148,7 @@ async def _authenticate(websocket: WebSocket, token: str | None) -> UUID | None:
 
     if message.get("type") != "authenticate":
         return None
-    return await _authenticate_from_message(message)
+    return _decode_user_from_token(message.get("token", ""))
 
 
 @chat_router.websocket("/ws")
