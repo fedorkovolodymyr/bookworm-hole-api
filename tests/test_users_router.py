@@ -4,10 +4,13 @@ from datetime import UTC, datetime, timedelta
 from io import StringIO
 
 import pytest
+from fastapi import Depends
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.db import get_session
 from app.core.deps import get_current_user
+from app.core.encryption import encrypt
 from app.main import app
 from app.models.book_status import BookStatus, BookStatusKind
 from app.models.catalog import Book as BookModel
@@ -19,7 +22,13 @@ from app.models.catalog import (
     ReleaseFormat,
 )
 from app.models.collection import Collection
+from app.models.google_integration import GoogleIntegration
 from app.models.user import User
+from app.repositories.backup_record_repository import BackupRecordRepository
+from app.repositories.google_integration_repository import GoogleIntegrationRepository
+from app.routers.users import get_backup_service, get_export_service
+from app.services.backup_service import BackupService
+from app.services.google_integration_service import GoogleIntegrationService
 from app.services.security import hash_password, verify_password
 
 
@@ -430,3 +439,133 @@ class TestExportAccount:
         body = response.json()
         assert "export_version" in body
         assert body["export_version"] == 1
+
+
+class FakeDriveAdapter:
+    def __init__(self) -> None:
+        self.folder_calls: list[tuple[str, str]] = []
+        self.uploads: list[tuple[str, str, str, bytes]] = []
+
+    async def find_or_create_folder(self, access_token: str, folder_name: str) -> str:
+        self.folder_calls.append((access_token, folder_name))
+        return "fake-folder-id"
+
+    async def upload_file(
+        self, access_token: str, folder_id: str, filename: str, content: bytes
+    ) -> str:
+        self.uploads.append((access_token, folder_id, filename, content))
+        return f"fake-file-{len(self.uploads)}"
+
+
+@pytest.fixture
+async def fake_drive_adapter() -> AsyncIterator[FakeDriveAdapter]:
+    adapter = FakeDriveAdapter()
+
+    def _get_backup_service(
+        current_user: User = Depends(get_current_user),
+        session: AsyncSession = Depends(get_session),
+    ) -> BackupService:
+        return BackupService(
+            GoogleIntegrationService(GoogleIntegrationRepository(session)),
+            get_export_service(current_user, session),
+            BackupRecordRepository(session),
+            adapter,
+        )
+
+    app.dependency_overrides[get_backup_service] = _get_backup_service
+    yield adapter
+    app.dependency_overrides.pop(get_backup_service, None)
+
+
+@pytest.fixture
+async def google_integration(
+    db_session: AsyncSession, owner: User
+) -> GoogleIntegration:
+    integration = GoogleIntegration(
+        user_id=owner.id,
+        access_token_encrypted=encrypt("owner-access-token"),
+        refresh_token_encrypted=encrypt("owner-refresh-token"),
+        expires_at=datetime.now(UTC) + timedelta(hours=1),
+        scopes=["https://www.googleapis.com/auth/drive.file"],
+        connected_at=datetime.now(UTC),
+    )
+    db_session.add(integration)
+    await db_session.commit()
+    await db_session.refresh(integration)
+    return integration
+
+
+class TestCreateGoogleDriveBackup:
+    async def test_requires_auth(self, async_client: AsyncClient):
+        response = await async_client.post("/api/v1/users/me/backup/google-drive")
+        assert response.status_code == 401
+
+    async def test_no_integration_raises_not_found(
+        self,
+        async_client: AsyncClient,
+        owner: User,
+        fake_drive_adapter: FakeDriveAdapter,
+    ):
+        response = await async_client.post("/api/v1/users/me/backup/google-drive")
+        assert response.status_code == 404
+
+    async def test_creates_backup(
+        self,
+        async_client: AsyncClient,
+        owner: User,
+        google_integration: GoogleIntegration,
+        fake_drive_adapter: FakeDriveAdapter,
+    ):
+        response = await async_client.post("/api/v1/users/me/backup/google-drive")
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["drive_file_id"] == "fake-file-1"
+        assert body["filename"].startswith("homelibrary-backup-")
+        assert body["filename"].endswith(".json")
+        assert "owner-access-token" not in response.text
+        assert fake_drive_adapter.folder_calls == [
+            ("owner-access-token", "HomeLibraryBackups")
+        ]
+        assert len(fake_drive_adapter.uploads) == 1
+
+
+class TestGoogleDriveBackupHistory:
+    async def test_requires_auth(self, async_client: AsyncClient):
+        response = await async_client.get(
+            "/api/v1/users/me/backup/google-drive/history"
+        )
+        assert response.status_code == 401
+
+    async def test_empty_when_no_backups(self, async_client: AsyncClient, owner: User):
+        response = await async_client.get(
+            "/api/v1/users/me/backup/google-drive/history"
+        )
+        assert response.status_code == 200
+        body = response.json()
+        assert body["items"] == []
+        assert body["total"] == 0
+
+    async def test_lists_backups_newest_first_paginated(
+        self,
+        async_client: AsyncClient,
+        owner: User,
+        google_integration: GoogleIntegration,
+        fake_drive_adapter: FakeDriveAdapter,
+    ):
+        first = await async_client.post("/api/v1/users/me/backup/google-drive")
+        second = await async_client.post("/api/v1/users/me/backup/google-drive")
+
+        response = await async_client.get(
+            "/api/v1/users/me/backup/google-drive/history", params={"limit": 1}
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+        assert body["total"] == 2
+        assert body["limit"] == 1
+        assert body["offset"] == 0
+        assert len(body["items"]) == 1
+        assert body["items"][0]["id"] == second.json()["id"]
+        assert body["items"][0]["drive_file_id"] == second.json()["drive_file_id"]
+        assert first.json()["id"] != second.json()["id"]

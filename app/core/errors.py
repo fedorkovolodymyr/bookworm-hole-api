@@ -88,3 +88,4 @@ class ErrorMessages:
     DELETION_GRACE_PERIOD_EXPIRED = (
         "The grace period for cancelling account deletion has passed"
     )
+    GOOGLE_DRIVE_REQUEST_FAILED = "Google Drive request failed"
