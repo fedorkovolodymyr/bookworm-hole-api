@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.routers.admin_audit_logs import admin_audit_logs_router
 from app.routers.admin_contributions import admin_contributions_router
 from app.routers.admin_users import admin_users_router
 from app.routers.ai import ai_router
@@ -42,4 +43,5 @@ api_v1.include_router(reading_sessions_router)
 api_v1.include_router(users_router)
 api_v1.include_router(admin_users_router)
 api_v1.include_router(admin_contributions_router)
+api_v1.include_router(admin_audit_logs_router)
 api_v1.include_router(chat_router)
