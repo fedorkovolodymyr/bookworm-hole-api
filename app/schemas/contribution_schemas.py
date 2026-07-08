@@ -63,3 +63,4 @@ class AdminContributionResponse(BaseModel):
 class ContributionDiffResponse(BaseModel):
     proposed: dict[str, Any]
     current: dict[str, Any] | None
+    warnings: list[str] = []

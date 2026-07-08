@@ -5,10 +5,12 @@ from app.models.contribution import Contribution, ContributionStatus
 from app.repositories.contribution_repository import ContributionRepository
 from app.schemas.common_schemas import Page
 from app.schemas.contribution_schemas import (
+    AdminContributionResponse,
     ContributionDiffResponse,
     CreateContributionSchema,
     UpdateContributionSchema,
 )
+from app.services.moderation.rules import default_rules, run_rules
 
 
 class ContributionService:
@@ -86,9 +88,16 @@ class ContributionService:
 
     async def list_by_status(
         self, status: ContributionStatus, skip: int = 0, limit: int = 10
-    ) -> Page[Contribution]:
+    ) -> Page[AdminContributionResponse]:
         items, total = await self.repository.list_by_status(status, skip, limit)
-        return Page(items=list(items), total=total, limit=limit, offset=skip)
+        rules = default_rules(self.repository.session)
+        responses = [
+            AdminContributionResponse.model_validate(item).model_copy(
+                update={"warnings": await run_rules(item, rules)}
+            )
+            for item in items
+        ]
+        return Page(items=responses, total=total, limit=limit, offset=skip)
 
     async def claim_contribution(
         self, contribution_id: UUID, reviewer_id: UUID
@@ -143,7 +152,10 @@ class ContributionService:
         contribution = await self.repository.get_by_id(contribution_id)
         if not contribution:
             raise NotFoundError(ErrorMessages.CONTRIBUTION_NOT_FOUND)
+        rules = default_rules(self.repository.session)
+        warnings = await run_rules(contribution, rules)
         return ContributionDiffResponse(
             proposed=contribution.payload,
             current=None,
+            warnings=warnings,
         )
