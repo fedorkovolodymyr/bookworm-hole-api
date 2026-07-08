@@ -59,3 +59,7 @@ class ErrorMessages:
     INVALID_CURRENT_PASSWORD = "Current password is incorrect"
     BOOK_NOT_FOUND = "Book not found"
     CANNOT_MERGE_BOOK_INTO_ITSELF = "Cannot merge a book into itself"
+    CHAT_THREAD_NOT_FOUND = "Chat thread not found"
+    CANNOT_MESSAGE_SELF = "You cannot send a message to yourself"
+    NOT_FRIENDS = "You can only message your friends"
+    BLOCKED_USER = "You cannot send messages to this user"

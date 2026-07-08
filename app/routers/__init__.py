@@ -2,6 +2,7 @@ from fastapi import APIRouter
 
 from app.routers.auth import auth_router
 from app.routers.books import books_router
+from app.routers.chat import chat_router
 from app.routers.collections import collections_router
 from app.routers.contributors import contributors_router
 from app.routers.external import external_router
@@ -27,3 +28,4 @@ api_v1.include_router(external_router)
 api_v1.include_router(friends_router)
 api_v1.include_router(reviews_router)
 api_v1.include_router(users_router)
+api_v1.include_router(chat_router)
