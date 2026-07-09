@@ -143,6 +143,11 @@ async def test_retrieve_all_books_filters_by_title(
     assert any(item["id"] == str(book.id) for item in data["items"])
 
 
+async def test_retrieve_all_books_rejects_limit_above_cap(async_client: AsyncClient):
+    response = await async_client.get("/api/v1/books/", params={"limit": 101})
+    assert response.status_code == 422
+
+
 async def test_create_book_requires_admin(async_client: AsyncClient):
     response = await async_client.post(
         "/api/v1/books/",

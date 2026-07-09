@@ -282,6 +282,14 @@ class TestRetrievePublicProfile:
         names = [item["name"] for item in body["collections"]["items"]]
         assert names == ["Public Reads"]
 
+    async def test_rejects_limit_above_cap(
+        self, async_client: AsyncClient, other: User
+    ):
+        response = await async_client.get(
+            f"/api/v1/users/{other.username}", params={"limit": 101}
+        )
+        assert response.status_code == 422
+
 
 @pytest.fixture
 async def book_with_release(db_session: AsyncSession) -> BookModel:
@@ -556,6 +564,14 @@ class TestGoogleDriveBackupHistory:
         body = response.json()
         assert body["items"] == []
         assert body["total"] == 0
+
+    async def test_rejects_limit_above_cap(
+        self, async_client: AsyncClient, owner: User
+    ):
+        response = await async_client.get(
+            "/api/v1/users/me/backup/google-drive/history", params={"limit": 101}
+        )
+        assert response.status_code == 422
 
     async def test_lists_backups_newest_first_paginated(
         self,

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
@@ -42,8 +42,8 @@ async def create_collection(
 
 @collections_router.get("/", response_model=Page[CollectionResponse])
 async def list_collections(
-    skip: int = 0,
-    limit: int = 10,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     service: CollectionService = Depends(get_collection_service),
 ):
@@ -53,8 +53,8 @@ async def list_collections(
 @collections_router.get("/{collection_id}", response_model=CollectionDetailResponse)
 async def retrieve_collection(
     collection_id: UUID,
-    items_skip: int = 0,
-    items_limit: int = 10,
+    items_skip: int = Query(0, ge=0),
+    items_limit: int = Query(10, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     service: CollectionService = Depends(get_collection_service),
 ):

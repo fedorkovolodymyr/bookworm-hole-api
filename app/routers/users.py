@@ -3,7 +3,7 @@ import io
 from datetime import datetime
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, UploadFile, status
+from fastapi import APIRouter, Depends, Query, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -191,8 +191,8 @@ async def cancel_own_deletion(
 @users_router.get("/{username}", response_model=PublicUserProfileResponse)
 async def retrieve_public_profile(
     username: str,
-    skip: int = 0,
-    limit: int = 10,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     service: UserService = Depends(get_user_service),
 ):
     """Public profile: display name, bio, and public collections only."""
@@ -203,8 +203,8 @@ async def retrieve_public_profile(
 async def retrieve_user_reviews(
     user_id: UUID,
     sort: ReviewSort = "created_at",
-    skip: int = 0,
-    limit: int = 10,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     service: ReviewService = Depends(get_review_service),
 ):
     """List a user's public reviews."""
@@ -345,8 +345,8 @@ async def create_google_drive_backup(
 )
 async def list_google_drive_backup_history(
     current_user: User = Depends(get_current_user),
-    skip: int = 0,
-    limit: int = 10,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     service: BackupService = Depends(get_backup_service),
 ):
     return await service.list_history(current_user.id, skip, limit)

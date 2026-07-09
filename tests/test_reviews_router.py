@@ -278,6 +278,14 @@ class TestListBookReviews:
         assert {item["id"] for item in data["items"]} == {str(review.id)}
         assert data["total"] == 1
 
+    async def test_rejects_limit_above_cap(
+        self, async_client: AsyncClient, owner: User, book: BookModel
+    ):
+        response = await async_client.get(
+            f"/api/v1/books/{book.id}/reviews", params={"limit": 101}
+        )
+        assert response.status_code == 422
+
     async def test_sorts_by_rating(
         self,
         async_client: AsyncClient,
@@ -358,3 +366,11 @@ class TestListUserReviews:
         assert response.status_code == 200
         data = response.json()
         assert {item["id"] for item in data["items"]} == {str(review.id)}
+
+    async def test_rejects_limit_above_cap(
+        self, async_client: AsyncClient, owner: User
+    ):
+        response = await async_client.get(
+            f"/api/v1/users/{owner.id}/reviews", params={"limit": 101}
+        )
+        assert response.status_code == 422
