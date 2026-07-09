@@ -51,7 +51,7 @@ version_toml = ["pyproject.toml:project.version"]
 tag_format = "v{version}"
 commit_parser = "conventional"
 major_on_zero = true
-build_command = false
+build_command = ""
 
 [tool.semantic_release.branches.main]
 match = "main"
