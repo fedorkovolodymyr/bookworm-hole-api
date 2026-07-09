@@ -19,6 +19,18 @@ class TestBookHistory:
         assert data["items"][0]["version_number"] == 1
         assert data["items"][0]["change_source"] == "admin"
 
+    async def test_history_rejects_limit_above_cap(self, admin_client: AsyncClient):
+        create_response = await admin_client.post(
+            "/api/v1/books/",
+            json={"title": "Dune", "description": "Desert planet epic"},
+        )
+        book_id = create_response.json()["id"]
+
+        response = await admin_client.get(
+            f"/api/v1/books/{book_id}/history", params={"limit": 101}
+        )
+        assert response.status_code == 422
+
     async def test_history_records_new_version_on_update(
         self, admin_client: AsyncClient
     ):

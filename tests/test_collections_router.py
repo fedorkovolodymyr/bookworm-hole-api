@@ -118,6 +118,12 @@ class TestListCollections:
         other_response = await async_client.get("/api/v1/collections/")
         assert other_response.json()["items"] == []
 
+    async def test_rejects_limit_above_cap(
+        self, async_client: AsyncClient, owner: User
+    ):
+        response = await async_client.get("/api/v1/collections/", params={"limit": 101})
+        assert response.status_code == 422
+
 
 class TestRetrieveCollection:
     async def test_owner_can_view_private(
@@ -166,6 +172,14 @@ class TestRetrieveCollection:
             "/api/v1/collections/00000000-0000-0000-0000-000000000000"
         )
         assert response.status_code == 404
+
+    async def test_rejects_items_limit_above_cap(
+        self, async_client: AsyncClient, owner: User, collection: Collection
+    ):
+        response = await async_client.get(
+            f"/api/v1/collections/{collection.id}", params={"items_limit": 101}
+        )
+        assert response.status_code == 422
 
 
 class TestUpdateCollection:

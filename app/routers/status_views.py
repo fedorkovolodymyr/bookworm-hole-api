@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
@@ -33,8 +33,8 @@ async def _list_page(
 @status_views_router.get("/library", response_model=Page[BookStatusResponse])
 async def list_library(
     sort: BookStatusSort = "acquired_at",
-    skip: int = 0,
-    limit: int = 10,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     service: BookStatusService = Depends(get_book_status_service),
 ):
@@ -47,8 +47,8 @@ async def list_library(
 @status_views_router.get("/wishlist", response_model=Page[BookStatusResponse])
 async def list_wishlist(
     sort: BookStatusSort = "acquired_at",
-    skip: int = 0,
-    limit: int = 10,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     service: BookStatusService = Depends(get_book_status_service),
 ):
@@ -61,8 +61,8 @@ async def list_wishlist(
 @status_views_router.get("/lent-out", response_model=Page[BookStatusResponse])
 async def list_lent_out(
     sort: BookStatusSort = "acquired_at",
-    skip: int = 0,
-    limit: int = 10,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     service: BookStatusService = Depends(get_book_status_service),
 ):
@@ -75,8 +75,8 @@ async def list_lent_out(
 @status_views_router.get("/borrowed", response_model=Page[BookStatusResponse])
 async def list_borrowed(
     sort: BookStatusSort = "acquired_at",
-    skip: int = 0,
-    limit: int = 10,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     service: BookStatusService = Depends(get_book_status_service),
 ):

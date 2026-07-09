@@ -130,6 +130,13 @@ class TestAggregatedStatusViews:
         assert len(data["items"]) == 1
 
     @pytest.mark.parametrize("path,kind", VIEW_ENDPOINTS)
+    async def test_rejects_limit_above_cap(
+        self, async_client: AsyncClient, owner: User, path: str, kind: str
+    ):
+        response = await async_client.get(path, params={"limit": 101})
+        assert response.status_code == 422
+
+    @pytest.mark.parametrize("path,kind", VIEW_ENDPOINTS)
     async def test_sort_by_title(
         self,
         async_client: AsyncClient,

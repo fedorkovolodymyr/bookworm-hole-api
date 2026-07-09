@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
@@ -48,8 +48,8 @@ def get_entity_version_service(
 
 @books_router.get("/", response_model=Page[BookResponse])
 async def retrieve_all_books(
-    skip: int = 0,
-    limit: int = 10,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     title: str | None = None,
     author: str | None = None,
     language: str | None = None,
@@ -172,8 +172,8 @@ async def remove_book_contributor(
 async def retrieve_book_reviews(
     book_id: UUID,
     sort: ReviewSort = "created_at",
-    skip: int = 0,
-    limit: int = 10,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     service: ReviewService = Depends(get_review_service),
 ):
     return await service.list_for_book(book_id, sort, skip, limit)
@@ -182,8 +182,8 @@ async def retrieve_book_reviews(
 @books_router.get("/{book_id}/history", response_model=Page[EntityVersionResponse])
 async def retrieve_book_history(
     book_id: UUID,
-    skip: int = 0,
-    limit: int = 10,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
     service: EntityVersionService = Depends(get_entity_version_service),
 ):
     return await service.list_history(EntityType.book, book_id, skip, limit)
