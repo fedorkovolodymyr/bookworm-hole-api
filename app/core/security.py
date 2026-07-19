@@ -10,13 +10,19 @@ EMAIL_VERIFICATION_SALT = "email-verification"
 EMAIL_VERIFICATION_MAX_AGE_SECONDS = 60 * 60 * 24
 
 
-def _encode_token(user_id: UUID, jti: str, expires_at: datetime) -> str:
+def _encode_token(
+    user_id: UUID,
+    jti: str,
+    expires_at: datetime,
+    extra_claims: dict[str, bool] | None = None,
+) -> str:
     now = datetime.now(UTC)
     payload = {
         "sub": str(user_id),
         "iat": now,
         "exp": expires_at,
         "jti": jti,
+        **(extra_claims or {}),
     }
     return jwt.encode(
         payload,
@@ -25,11 +31,13 @@ def _encode_token(user_id: UUID, jti: str, expires_at: datetime) -> str:
     )
 
 
-def create_access_token(user_id: UUID) -> str:
+def create_access_token(user_id: UUID, is_admin: bool) -> str:
     expires_at = datetime.now(UTC) + timedelta(
         minutes=settings.auth_settings.access_token_expire_minutes
     )
-    return _encode_token(user_id, str(uuid4()), expires_at)
+    return _encode_token(
+        user_id, str(uuid4()), expires_at, extra_claims={"is_admin": is_admin}
+    )
 
 
 def create_refresh_token(user_id: UUID) -> tuple[str, str, datetime]:

@@ -38,14 +38,21 @@ def test_hash_password_uses_argon2id():
 
 def test_create_access_token_has_expected_claims():
     user_id = uuid4()
-    token = create_access_token(user_id)
+    token = create_access_token(user_id, is_admin=False)
     payload = decode_token(token)
     assert payload["sub"] == str(user_id)
     assert "exp" in payload
     assert "iat" in payload
     assert "jti" in payload
+    assert payload["is_admin"] is False
     delta = payload["exp"] - payload["iat"]
     assert delta == settings.auth_settings.access_token_expire_minutes * 60
+
+
+def test_create_access_token_embeds_is_admin_claim():
+    token = create_access_token(uuid4(), is_admin=True)
+    payload = decode_token(token)
+    assert payload["is_admin"] is True
 
 
 def test_create_refresh_token_has_expected_expiry():
@@ -77,7 +84,7 @@ def test_decode_token_rejects_expired_token():
 
 
 def test_decode_token_rejects_tampered_signature():
-    token = create_access_token(uuid4())
+    token = create_access_token(uuid4(), is_admin=False)
     tampered = token[:-1] + ("a" if token[-1] != "a" else "b")
     with pytest.raises(jwt.InvalidSignatureError):
         decode_token(tampered)

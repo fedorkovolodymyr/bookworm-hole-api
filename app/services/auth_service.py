@@ -23,7 +23,7 @@ class AuthService:
         self.refresh_token_repository = refresh_token_repository
 
     async def _issue_tokens(self, user: User) -> TokenResponse:
-        access_token = create_access_token(user.id)
+        access_token = create_access_token(user.id, user.is_admin)
         refresh_token, jti, expires_at = create_refresh_token(user.id)
         await self.refresh_token_repository.create(
             RefreshToken(user_id=user.id, jti=jti, expires_at=expires_at)
