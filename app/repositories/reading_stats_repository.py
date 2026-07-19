@@ -100,9 +100,10 @@ class ReadingStatsRepository:
             GROUP BY streak_group
         )
         SELECT
-            (MAX(CASE WHEN max_date::date = (NOW() AT TIME ZONE 'UTC')::date
-            THEN length ELSE 0 END) OVER ())::int as current_streak_days,
-            MAX(length) as longest_streak_days
+            COALESCE(MAX(length) FILTER (
+                WHERE max_date = (NOW() AT TIME ZONE 'UTC')::date
+            ), 0)::int as current_streak_days,
+            COALESCE(MAX(length), 0)::int as longest_streak_days
         FROM streak_lengths
         """
 
@@ -140,8 +141,8 @@ class ReadingStatsRepository:
             COALESCE(COUNT(rs.id), 0)::int as sessions,
             COALESCE(SUM(rs.pages_read), 0)::int as pages_read
         FROM generate_series(
-            :from_date::date,
-            :to_date::date,
+            CAST(:from_date AS date),
+            CAST(:to_date AS date),
             INTERVAL '1 day'
         ) as day
         LEFT JOIN reading_sessions rs ON
