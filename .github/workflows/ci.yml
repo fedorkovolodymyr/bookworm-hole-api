@@ -68,7 +68,7 @@ jobs:
       - name: Coverage gate (no regression vs .coverage-baseline)
         run: task coverage-check
       - name: Upload coverage data
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage-data
           path: .coverage

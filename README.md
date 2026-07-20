@@ -1,6 +1,6 @@
 # bookworm-hole-api
 
-[![CI](https://github.com/fedorkovolodymyr/bookworm-hole-api/actions/workflows/ci.yml/badge.svg)](https://github.com/fedorkovolodymyr/bookworm-hole-api/actions/workflows/ci.yml)
+[![CI](https://github.com/fedorkovolodymyr/bookworm-hole-api/actions/workflows/ci.yml/badge.svg?event=pull_request)](https://github.com/fedorkovolodymyr/bookworm-hole-api/actions/workflows/ci.yml)
 ![coverage](coverage.svg)
 
 FastAPI + SQLModel + asyncpg backend for Bookworm Hole — a book cataloging and tracking API.
