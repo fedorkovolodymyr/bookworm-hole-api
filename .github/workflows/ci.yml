@@ -3,26 +3,7 @@ on:
   pull_request:
   workflow_dispatch:
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Install uv
-        uses: astral-sh/setup-uv@v8.3.0
-        with:
-          python-version: "3.14"
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-      - name: Install Task
-        uses: arduino/setup-task@v3.0.0
-        with:
-          version: 3.x
-      - name: Install dependencies
-        run: task install
-      - name: Lint (ruff + pyright)
-        run: task lint
-
-  test:
+  ci:
     runs-on: ubuntu-latest
     env:
       POSTGRES_HOST: localhost
@@ -55,6 +36,17 @@ jobs:
           version: 3.x
       - name: Install dependencies
         run: task install
+      - name: Cache pre-commit envs
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: precommit-${{ hashFiles('.pre-commit-config.yaml') }}
+      - name: Lint (ruff + pyright)
+        run: task lint
+      - name: Pre-commit (formatting hooks only — ruff/pyright already covered above)
+        run: task precommit
+        env:
+          SKIP: task-format,task-lint
       - name: Configure environment
         run: |
           printf 'POSTGRES_HOST=%s\n' "$POSTGRES_HOST" >> .env
@@ -82,34 +74,8 @@ jobs:
           path: .coverage
           retention-days: 7
 
-  precommit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Install uv
-        uses: astral-sh/setup-uv@v8.3.0
-        with:
-          python-version: "3.14"
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
-      - name: Install Task
-        uses: arduino/setup-task@v3.0.0
-        with:
-          version: 3.x
-      - name: Install dependencies
-        run: task install
-      - name: Cache pre-commit envs
-        uses: actions/cache@v6
-        with:
-          path: ~/.cache/pre-commit
-          key: precommit-${{ hashFiles('.pre-commit-config.yaml') }}
-      - name: Pre-commit (formatting hooks only — ruff/pyright covered by the lint job)
-        run: task precommit
-        env:
-          SKIP: task-format,task-lint
-
   release:
-    needs: [lint, test, precommit]
+    needs: [ci]
     if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
