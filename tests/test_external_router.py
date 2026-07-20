@@ -107,6 +107,7 @@ class TestSearchRoute:
                 "author_name": "Frank Herbert",
                 "isbn_13": ["9780441172719"],
                 "isbn_10": [],
+                "key": "/works/OL1W",
             },
         )
         _SEARCH_RESULTS["dune"] = [record]
@@ -120,6 +121,27 @@ class TestSearchRoute:
         assert data["hits"][0]["title"] == "Dune"
         assert data["hits"][0]["authors"] == ["Frank Herbert"]
         assert data["hits"][0]["source"] == "stub"
+        assert data["hits"][0]["source_id"] == "/works/OL1W"
+
+    async def test_search_drops_hits_missing_source_id(self, async_client: AsyncClient):
+        record = ExternalSourceRecord(
+            source="stub",
+            ref_kind=ExternalRefKind.search,
+            ref="dune",
+            payload={
+                "title": "Dune",
+                "author_name": "Frank Herbert",
+                "isbn_13": ["9780441172719"],
+                "isbn_10": [],
+            },
+        )
+        _SEARCH_RESULTS["dune"] = [record]
+
+        response = await async_client.get("/api/v1/external/search?q=dune&sources=stub")
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["hits"] == []
 
     async def test_search_multiple_sources(self, async_client: AsyncClient):
         record1 = ExternalSourceRecord(
@@ -131,6 +153,7 @@ class TestSearchRoute:
                 "author_name": "Frank Herbert",
                 "isbn_13": ["9780441172719"],
                 "isbn_10": [],
+                "key": "/works/OL1W",
             },
         )
         _SEARCH_RESULTS["dune"] = [record1]
@@ -152,6 +175,7 @@ class TestSearchRoute:
                 "author_name": "Frank Herbert",
                 "isbn_13": ["9780441172719"],
                 "isbn_10": [],
+                "key": "/works/OL1W",
             },
         )
         record2 = ExternalSourceRecord(
@@ -163,6 +187,7 @@ class TestSearchRoute:
                 "author_name": "Frank Herbert",
                 "isbn_13": ["9780441172719"],
                 "isbn_10": [],
+                "key": "/works/OL1W",
             },
         )
         _SEARCH_RESULTS["dune"] = [record1, record2]
@@ -183,6 +208,7 @@ class TestSearchRoute:
                 "author_name": "Frank Herbert",
                 "isbn_13": ["9780441172719"],
                 "isbn_10": [],
+                "key": "/works/OL1W",
             },
         )
         _SEARCH_RESULTS["dune"] = [record]

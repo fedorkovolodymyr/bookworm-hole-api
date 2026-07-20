@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class ExternalSearchHit(BaseModel):
     source: str
+    source_id: str
     title: str
     isbns: list[str]
     authors: list[str]
