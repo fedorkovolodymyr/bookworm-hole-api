@@ -107,6 +107,7 @@ class TestSearchRoute:
                 "author_name": "Frank Herbert",
                 "isbn_13": ["9780441172719"],
                 "isbn_10": [],
+                "key": "/works/OL1W",
             },
         )
         _SEARCH_RESULTS["dune"] = [record]
@@ -131,6 +132,7 @@ class TestSearchRoute:
                 "author_name": "Frank Herbert",
                 "isbn_13": ["9780441172719"],
                 "isbn_10": [],
+                "key": "/works/OL1W",
             },
         )
         _SEARCH_RESULTS["dune"] = [record1]
@@ -152,6 +154,7 @@ class TestSearchRoute:
                 "author_name": "Frank Herbert",
                 "isbn_13": ["9780441172719"],
                 "isbn_10": [],
+                "key": "/works/OL1W",
             },
         )
         record2 = ExternalSourceRecord(
@@ -163,6 +166,7 @@ class TestSearchRoute:
                 "author_name": "Frank Herbert",
                 "isbn_13": ["9780441172719"],
                 "isbn_10": [],
+                "key": "/works/OL1W",
             },
         )
         _SEARCH_RESULTS["dune"] = [record1, record2]
@@ -183,6 +187,7 @@ class TestSearchRoute:
                 "author_name": "Frank Herbert",
                 "isbn_13": ["9780441172719"],
                 "isbn_10": [],
+                "key": "/works/OL1W",
             },
         )
         _SEARCH_RESULTS["dune"] = [record]

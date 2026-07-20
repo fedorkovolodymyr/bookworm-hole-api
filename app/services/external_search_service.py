@@ -189,13 +189,14 @@ class ExternalSearchService:
 
         hits: list[ExternalSearchHit] = []
         for record in records:
-            title, isbns, authors, cover_url, _source_id = _extract_hit_data(
+            title, isbns, authors, cover_url, source_id = _extract_hit_data(
                 record, source_name
             )
-            if title:
+            if title and source_id:
                 hits.append(
                     ExternalSearchHit(
                         source=source_name,
+                        source_id=source_id,
                         title=title,
                         isbns=isbns,
                         authors=authors,
