@@ -1,4 +1,4 @@
-name: Coverage badge
+name: Post-merge (release + coverage badge)
 on:
   push:
     branches: [main]
@@ -6,7 +6,7 @@ concurrency:
   group: main-push-writes
   cancel-in-progress: false
 jobs:
-  update-badge:
+  post-merge:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -21,6 +21,8 @@ jobs:
       POSTGRES_PORT: 5432
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - name: Install uv
         uses: astral-sh/setup-uv@v8.3.0
         with:
@@ -33,6 +35,29 @@ jobs:
           version: 3.x
       - name: Install dependencies
         run: task install
+      - name: Configure git identity
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      # --- Release (bump version, tag, publish GitHub release) ---
+      - name: Bump version, tag locally (no-op if no releasable commits)
+        run: uv run semantic-release version --commit --tag --changelog --no-push --no-vcs-release
+      - name: Push tag and land the bump commit via auto-merged PR (main is protected, can't push directly)
+        run: |
+          tag=$(git describe --tags --exact-match HEAD 2>/dev/null || true)
+          if [ -n "$tag" ]; then
+            git push origin "$tag"
+            branch="chore/release-${tag}"
+            git checkout -b "$branch"
+            git push origin "$branch"
+            gh pr create --base main --head "$branch" --title "chore(release): ${tag}" --body "Automated release ${tag}."
+            gh pr merge "$branch" --auto --merge
+            gh release create "$tag" --generate-notes
+            git checkout main
+          fi
+
+      # --- Coverage badge + baseline ---
       - name: Resolve merged PR's CI run
         id: run
         continue-on-error: true
@@ -71,8 +96,6 @@ jobs:
           task coverage-update-baseline
           if ! git diff --quiet -- coverage.svg .coverage-baseline; then
             branch="chore/coverage-badge-update-${{ github.run_id }}"
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
             git checkout -b "$branch"
             git add coverage.svg .coverage-baseline
             git commit -m "chore(coverage): update coverage badge and baseline"
