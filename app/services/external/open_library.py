@@ -157,6 +157,11 @@ class OpenLibraryAdapter(BookSourceAdapter):
     async def get_detail(
         self, source_id: str, session: AsyncSession
     ) -> ExternalBookDetail | None:
+        # search() hits carry a work key ("/works/OL...W") as source_id, not an
+        # ISBN — only a direct ISBN lookup (e.g. refresh-metadata) passes an ISBN.
+        if source_id.startswith("/works/"):
+            return await self._get_detail_by_work_key(source_id)
+
         record = await self.get_by_isbn(source_id, session)
         if record is None:
             return None
@@ -174,4 +179,29 @@ class OpenLibraryAdapter(BookSourceAdapter):
             published_year=_parse_published_year(isbn_doc.get("publish_date")),
             language=_parse_language(isbn_doc.get("languages")),
             cover_image_url=_parse_cover_url(isbn_doc.get("covers")),
+        )
+
+    async def _get_detail_by_work_key(self, work_key: str) -> ExternalBookDetail | None:
+        async with self._build_client() as client:
+            try:
+                response = await client.get(f"{work_key}.json")
+                if response.status_code == int(httpx.codes.NOT_FOUND):
+                    return None
+                response.raise_for_status()
+            except httpx.HTTPError as exc:
+                raise ExternalServiceError(
+                    ErrorMessages.EXTERNAL_LOOKUP_FAILED
+                ) from exc
+            work_doc = response.json()
+
+        return ExternalBookDetail(
+            title=work_doc.get("title") or "",
+            description=_parse_description(work_doc),
+            contributors=[],
+            isbns=[],
+            format=ReleaseFormat.other,
+            publisher=None,
+            published_year=_parse_published_year(work_doc.get("first_publish_date")),
+            language=None,
+            cover_image_url=_parse_cover_url(work_doc.get("covers")),
         )
