@@ -22,6 +22,8 @@
 - `task psql` — psql shell against the dev database
 - `task refresh-metadata` — manually refresh stale release metadata from external sources (releases older than N days, default 30)
 - `task purge-deleted-users` — hard-delete accounts past their GDPR deletion grace period (anonymizes their reviews first)
+- `task worker` — run the `arq` background worker locally (needs Postgres + Redis running); processes catalog-import jobs
+- `task worker-container` — same, inside the running api container
 - `task release-dry-run` — preview next version bump from commits since last tag, no changes made
 - `task release` — bump `pyproject.toml` version, tag, publish GitHub release (CI-only, see Release Flow)
 - `task coverage-badge` — regenerate `coverage.svg` from the last test run (CI-only, committed on push to `main`)
@@ -126,6 +128,16 @@ app/
 - `SentrySettings` (`app/core/config.py`, `env_prefix="SENTRY_"`): `dsn`, `traces_sample_rate`, `profiles_sample_rate`. `dsn` unset (default) → Sentry stays disabled, no-op, no external calls — safe default for local dev/test.
 - `sentry_sdk.init(...)` is called from `app/core/lifespan.py` startup, guarded by `if sentry_settings.dsn`. `send_default_pii` is always `False` — never send emails/tokens/PII to Sentry.
 - To enable locally: set `SENTRY_DSN` in `.env` (see `.env.example`).
+
+## Catalog Imports
+
+- Bulk catalog growth (populating books/comics/manga from external sources) runs on an `arq` (async, Redis-backed) background worker — not Celery, since the whole stack (SQLAlchemy, httpx adapters) is already async and arq avoids a sync/async bridge. `RedisSettings` (`app/core/config.py`, `env_prefix="REDIS_"`) points at the same Redis instance already provisioned for dev/docker-compose (`redis` service, previously unused by app code).
+- `app/core/redis.py` holds a module-level `ArqRedis` pool (same pattern as `async_engine` in `app/core/db.py`), initialized/closed from `app/core/lifespan.py`'s `lifespan()`.
+- `app/worker/settings.py::WorkerSettings` is the `arq` CLI entrypoint (`task worker` runs `arq app.worker.settings.WorkerSettings`). `app/worker/tasks.py::import_catalog_profile(ctx, profile_name)` opens its own `AsyncSession` (workers run outside FastAPI's request-scoped `get_session`), runs `CatalogImportService.run_profile`, and commits once at the end.
+- `app/services/catalog_import_profiles.py` defines fixed, curated `CatalogImportProfile`s (`books` target 1000, `comics` target 100, `manga` target 100) as lists of `subject:`-scoped search queries (Google Books search operator) — deliberately narrow/curated rather than an unbounded crawl, so imports stay on-topic per profile.
+- `app/services/catalog_import_service.py::CatalogImportService.run_profile` composes the existing `ExternalSearchService` (multi-source search + dedup) and `ImportService` (single-book import by `source`/`source_id`, already used by `POST /external/import`) — no new import logic, just orchestration + a target-count stop condition. "Imported" count is measured as the net new `Book` row count before/after the run (existing services don't report created-vs-matched), checked once per query (not per hit), so a batch can slightly overshoot the target.
+- Manual trigger only, by design — no `cron_jobs` are registered on `WorkerSettings`. `POST /admin/catalog-imports` (`require_admin`) enqueues `import_catalog_profile` and returns a job id; `GET /admin/catalog-imports/{job_id}` reads status/result straight from `arq`'s `Job` (via the same Redis pool) — no DB table for job tracking.
+- Real-world query yield is capped by each adapter's single unpaginated request (Google Books' unauthenticated default page size, no `startIndex`) and its free-tier rate limit — profiles are a best-effort ceiling, not a guarantee; re-running a profile (idempotent, dedups by ISBN/title like all `ImportService` calls) is the intended way to top up the catalog over time.
 
 ## Gotchas
 

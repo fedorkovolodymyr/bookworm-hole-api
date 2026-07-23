@@ -45,6 +45,20 @@ class PostgresSettings(BaseSettings):
     )
 
 
+class RedisSettings(BaseSettings):
+    host: str = "localhost"
+    port: int = 6379
+    db: int = 0
+
+    model_config = SettingsConfigDict(
+        env_prefix="REDIS_",
+        case_sensitive=False,
+        extra="ignore",
+        env_file=".env",
+        env_file_encoding="utf-8",
+    )
+
+
 class AuthSettings(BaseSettings):
     secret_key: str = "dev-secret-key-change-in-production"
     algorithm: str = "HS256"
@@ -201,6 +215,7 @@ class Settings:
     def __init__(self):
         self.api_settings = APISettings()
         self.postgres_settings = PostgresSettings()
+        self.redis_settings = RedisSettings()
         self.auth_settings = AuthSettings()
         self.app_settings = AppSettings()
         self.open_library_settings = OpenLibrarySettings()

@@ -40,3 +40,5 @@ All developer operations go through `task` — run `task --list` to see every av
 Versioning is automated via `python-semantic-release`, driven by Conventional Commit messages — never edit `version` in `pyproject.toml` by hand. See [CLAUDE.md](CLAUDE.md#release-flow) for the bump mapping and release process.
 
 Users can self-service schedule account deletion (`POST /users/me/delete`, 30-day grace period, cancellable via `POST /users/me/delete/cancel`). Run `task purge-deleted-users` (e.g. on a scheduled job) to hard-delete accounts past their grace period.
+
+Catalog growth (bulk-importing books/comics/manga from external sources) runs on an `arq` background worker (`task worker`, or `task worker-container` against the running stack) instead of blocking a request. Admins trigger a run manually via `POST /api/v1/admin/catalog-imports` (`{"profile": "books" | "comics" | "manga"}`) and poll `GET /api/v1/admin/catalog-imports/{job_id}` for status/result — nothing runs automatically. See [CLAUDE.md](CLAUDE.md#catalog-imports) for how profiles/queries are defined.

@@ -207,3 +207,12 @@ tasks:
     desc: Hard-delete accounts past their GDPR deletion grace period (anonymizes reviews first)
     dotenv: [".env"]
     cmd: "{{.DC}} exec api uv run python -m scripts.purge_deleted_users"
+
+  worker:
+    desc: Run the arq background worker locally (needs Postgres + Redis running)
+    dotenv: [".env"]
+    cmd: "{{.UV}} run arq app.worker.settings.WorkerSettings"
+  worker-container:
+    desc: Run the arq background worker inside the running api container
+    dotenv: [".env"]
+    cmd: "{{.DC}} exec api uv run arq app.worker.settings.WorkerSettings"
