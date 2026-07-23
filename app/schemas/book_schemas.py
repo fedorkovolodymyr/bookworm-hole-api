@@ -31,6 +31,7 @@ class BookResponse(BaseModel):
     original_language: str | None
     first_publication_year: int | None
     description: str
+    genres: list[str]
     created_at: datetime
     updated_at: datetime
 
@@ -70,6 +71,7 @@ class BookWithReleasesResponse(BaseModel):
     original_language: str | None
     first_publication_year: int | None
     description: str
+    genres: list[str]
     created_at: datetime
     updated_at: datetime
     releases: list[ReleaseWithISBNsResponse]

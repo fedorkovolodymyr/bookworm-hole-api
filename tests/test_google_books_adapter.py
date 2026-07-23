@@ -183,6 +183,28 @@ class TestGetDetail:
         assert detail.published_year is None
         assert detail.language is None
         assert detail.cover_image_url is None
+        assert detail.genres == []
+
+    @respx.mock
+    async def test_maps_categories_to_genres(self, session: AsyncSession):
+        respx.get(f"{BASE_URL}/volumes/manga1").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "id": "manga1",
+                    "volumeInfo": {
+                        "title": "Some Manga",
+                        "categories": ["Comics & Graphic Novels / Manga / General"],
+                    },
+                },
+            )
+        )
+        adapter = GoogleBooksAdapter()
+
+        detail = await adapter.get_detail("manga1", session)
+
+        assert detail is not None
+        assert set(detail.genres) == {"comics_graphic_novels", "manga"}
 
 
 class TestRegistry:

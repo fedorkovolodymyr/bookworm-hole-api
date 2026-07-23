@@ -100,6 +100,30 @@ class TestGetDetail:
         )
         assert detail.isbns == []
         assert detail.contributors == []
+        assert detail.genres == []
+
+    @respx.mock
+    async def test_by_work_key_maps_subjects_to_genres(self, session: AsyncSession):
+        respx.get("https://openlibrary.org/works/OL893415W.json").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "title": "Dune",
+                    "subjects": ["Science fiction", "Fantasy fiction"],
+                },
+            )
+        )
+        adapter = OpenLibraryAdapter()
+
+        detail = await adapter.get_detail("/works/OL893415W", session)
+
+        assert detail is not None
+        assert set(detail.genres) == {
+            "science_fiction",
+            "science",
+            "fantasy",
+            "fiction",
+        }
 
     @respx.mock
     async def test_by_work_key_returns_none_when_not_found(self, session: AsyncSession):

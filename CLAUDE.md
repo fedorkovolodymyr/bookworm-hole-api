@@ -105,6 +105,8 @@ app/
 ## Models
 
 - Models with bidirectional `Relationship()`/`back_populates` pairs go in one shared file (e.g. `app/models/catalog.py`), not split one-class-per-file. Splitting forces circular imports resolved via `if TYPE_CHECKING:` + string forward refs — avoid that pattern here. Models with no cross-relationships (e.g. `user.py`, `refresh_token.py`) still get their own file.
+- `Book.genre_flags` (`app/models/catalog.py`) is a bitmask `BigInteger`, not a lookup table + join table (unlike `Contributor`). `Genre(enum.IntFlag)` members are combined with `|` and stored as a single int (`enum.auto()` gives the power-of-2 values). Deliberate given genres: are a closed, rarely-changed set (new genre = new enum member, no migration); are book-level not release-level (unlike `ContributorRole`, which varies per edition); and are exposed as locale-independent name strings (`Book.genres` property → `list[str]`) — same "code on the wire, client translates" convention as `ContributorRole`/`ReleaseFormat`. Conversion helpers: `genre_names_to_flags`/`genre_flags_to_names`. Querying "all books with genre X": `WHERE (genre_flags & :flag) != 0`.
+- `app/services/genre_mapping.py::genres_from_categories` maps free-text external categories/subjects (Google Books `volumeInfo.categories`, Open Library `work_doc.subjects`) to `Genre` names via substring keyword matching — best-effort, since neither source has a controlled vocabulary. Wired into both adapters' `get_detail` (`ExternalBookDetail.genres`) and applied/merged (`|=`, never overwritten) onto the resolved book in `ImportService.import_book`.
 
 ## Error Handling
 

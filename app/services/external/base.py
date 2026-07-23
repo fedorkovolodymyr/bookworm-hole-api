@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -57,3 +57,4 @@ class ExternalBookDetail:
     published_year: int | None
     language: str | None
     cover_image_url: str | None = None
+    genres: list[str] = field(default_factory=list[str])
