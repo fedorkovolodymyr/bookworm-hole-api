@@ -16,6 +16,7 @@ from app.services.external.base import (
     ExternalISBN,
 )
 from app.services.external.registry import register_adapter
+from app.services.genre_mapping import genres_from_categories
 
 _ISBN_KIND_BY_TYPE = {
     "ISBN_13": ISBNKind.isbn13,
@@ -158,4 +159,5 @@ class GoogleBooksAdapter(BookSourceAdapter):
             published_year=_parse_published_year(volume_info.get("publishedDate")),
             language=volume_info.get("language"),
             cover_image_url=_parse_cover_url(volume_info),
+            genres=genres_from_categories(volume_info.get("categories", [])),
         )

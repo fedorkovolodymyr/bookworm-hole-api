@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Index, func
+from sqlalchemy import BigInteger, Column, DateTime, Index, func
 from sqlalchemy import Enum as SAEnum
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -35,6 +35,52 @@ class ISBNKind(str, enum.Enum):
     other = "other"
 
 
+class Genre(enum.IntFlag):
+    """Bitmask flags, not a lookup table: genres are a closed, rarely-changed
+    set, and enum member names (not translated text) are the wire format —
+    localization happens client-side, same as ContributorRole/ReleaseFormat.
+    """
+
+    fiction = enum.auto()
+    fantasy = enum.auto()
+    science_fiction = enum.auto()
+    mystery_thriller = enum.auto()
+    romance = enum.auto()
+    horror = enum.auto()
+    historical_fiction = enum.auto()
+    classics = enum.auto()
+    young_adult = enum.auto()
+    biography_memoir = enum.auto()
+    history = enum.auto()
+    philosophy = enum.auto()
+    psychology = enum.auto()
+    self_help = enum.auto()
+    business_economics = enum.auto()
+    science = enum.auto()
+    poetry = enum.auto()
+    true_crime = enum.auto()
+    comics_graphic_novels = enum.auto()
+    manga = enum.auto()
+    religion = enum.auto()
+    travel = enum.auto()
+    cooking = enum.auto()
+    art = enum.auto()
+
+
+def genre_names_to_flags(names: list[str]) -> int:
+    flags = Genre(0)
+    for name in names:
+        try:
+            flags |= Genre[name]
+        except KeyError:
+            continue
+    return int(flags)
+
+
+def genre_flags_to_names(flags: int) -> list[str]:
+    return [g.name for g in Genre if g.name and g in Genre(flags)]
+
+
 class BookContributor(SQLModel, table=True):
     __tablename__ = "book_contributors"
 
@@ -61,6 +107,9 @@ class Book(SQLModel, IdMixin, TimestampMixin, table=True):
     original_language: str | None = Field(default=None, max_length=35)
     first_publication_year: int | None = Field(default=None)
     description: str
+    genre_flags: int = Field(
+        default=0, sa_column=Column(BigInteger, nullable=False, server_default="0")
+    )
 
     releases: list[Release] = Relationship(
         back_populates="book",
@@ -69,6 +118,10 @@ class Book(SQLModel, IdMixin, TimestampMixin, table=True):
     contributors: list[Contributor] = Relationship(
         back_populates="books", link_model=BookContributor
     )
+
+    @property
+    def genres(self) -> list[str]:
+        return genre_flags_to_names(self.genre_flags)
 
 
 class Release(SQLModel, IdMixin, TimestampMixin, table=True):

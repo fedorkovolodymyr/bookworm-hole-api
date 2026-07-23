@@ -16,6 +16,7 @@ from app.services.external.base import (
     ExternalISBN,
 )
 from app.services.external.registry import register_adapter
+from app.services.genre_mapping import genres_from_categories
 
 _FORMAT_BY_PHYSICAL_FORMAT = {
     "hardcover": ReleaseFormat.hardcover,
@@ -179,6 +180,7 @@ class OpenLibraryAdapter(BookSourceAdapter):
             published_year=_parse_published_year(isbn_doc.get("publish_date")),
             language=_parse_language(isbn_doc.get("languages")),
             cover_image_url=_parse_cover_url(isbn_doc.get("covers")),
+            genres=genres_from_categories(work_doc.get("subjects", [])),
         )
 
     async def _get_detail_by_work_key(self, work_key: str) -> ExternalBookDetail | None:
@@ -204,4 +206,5 @@ class OpenLibraryAdapter(BookSourceAdapter):
             published_year=_parse_published_year(work_doc.get("first_publish_date")),
             language=None,
             cover_image_url=_parse_cover_url(work_doc.get("covers")),
+            genres=genres_from_categories(work_doc.get("subjects", [])),
         )

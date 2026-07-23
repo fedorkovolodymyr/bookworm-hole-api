@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import AppError, ErrorMessages, NotFoundError
 from app.models.book_status import BookStatus, BookStatusKind
-from app.models.catalog import Book, Contributor, ContributorRole
+from app.models.catalog import Book, Contributor, ContributorRole, genre_names_to_flags
 from app.repositories.book_repository import BookRepository
 from app.repositories.book_status_repository import BookStatusRepository
 from app.repositories.contributor_repository import ContributorRepository
@@ -54,6 +54,12 @@ class ImportService:
         book, found_by_isbn = await self._resolve_book(
             detail, normalized_isbns, contributors
         )
+
+        new_genre_flags = book.genre_flags | genre_names_to_flags(detail.genres)
+        if new_genre_flags != book.genre_flags:
+            book.genre_flags = new_genre_flags
+            self.session.add(book)
+            await self.session.flush()
 
         for contributor, role in contributors:
             await self.import_repository.link_book_contributor(

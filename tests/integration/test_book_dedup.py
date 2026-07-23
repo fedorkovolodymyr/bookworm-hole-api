@@ -56,7 +56,9 @@ def import_service(db_session: AsyncSession) -> ImportService:
     )
 
 
-def _detail(*, title: str, isbn_code: str, author: str) -> ExternalBookDetail:
+def _detail(
+    *, title: str, isbn_code: str, author: str, genres: list[str] | None = None
+) -> ExternalBookDetail:
     return ExternalBookDetail(
         title=title,
         description="A test description",
@@ -68,6 +70,7 @@ def _detail(*, title: str, isbn_code: str, author: str) -> ExternalBookDetail:
         publisher="Test Publisher",
         published_year=2000,
         language="en",
+        genres=genres or [],
     )
 
 
@@ -175,3 +178,49 @@ class TestImportBookDedup:
         with pytest.raises(NotFoundError) as exc_info:
             await import_service.import_book("stub", "unknown-id")
         assert exc_info.value.status_code == 404
+
+
+class TestImportBookGenres:
+    async def test_sets_genre_flags_on_new_book(self, import_service: ImportService):
+        _DETAILS["book-g"] = _detail(
+            title="Test Import Book G",
+            isbn_code="9780000010087",
+            author="Test Author G",
+            genres=["manga", "comics_graphic_novels"],
+        )
+
+        book = await import_service.import_book("stub", "book-g")
+
+        assert set(book.genres) == {"manga", "comics_graphic_novels"}
+
+    async def test_merges_genre_flags_into_existing_book(
+        self, import_service: ImportService
+    ):
+        _DETAILS["book-h-hardcover"] = _detail(
+            title="Test Import Book H",
+            isbn_code="9780000010094",
+            author="Test Author H",
+            genres=["fantasy"],
+        )
+        await import_service.import_book("stub", "book-h-hardcover")
+
+        _DETAILS["book-h-paperback"] = _detail(
+            title="Test Import Book H",
+            isbn_code="9780000010100",
+            author="Test Author H",
+            genres=["fiction"],
+        )
+        book = await import_service.import_book("stub", "book-h-paperback")
+
+        assert set(book.genres) == {"fantasy", "fiction"}
+
+    async def test_no_genres_leaves_flags_unset(self, import_service: ImportService):
+        _DETAILS["book-i"] = _detail(
+            title="Test Import Book I",
+            isbn_code="9780000010117",
+            author="Test Author I",
+        )
+
+        book = await import_service.import_book("stub", "book-i")
+
+        assert book.genres == []
