@@ -78,6 +78,58 @@ class TestGetByIsbn:
         assert record is None
 
 
+class TestGetDetail:
+    @respx.mock
+    async def test_by_work_key_uses_work_endpoint_not_isbn_endpoint(
+        self, session: AsyncSession
+    ):
+        respx.get("https://openlibrary.org/works/OL893415W.json").mock(
+            return_value=httpx.Response(200, json=_load_fixture("work_OL893415W.json"))
+        )
+        adapter = OpenLibraryAdapter()
+
+        detail = await adapter.get_detail("/works/OL893415W", session)
+
+        assert detail is not None
+        assert detail.title == "Dune"
+        assert detail.description is not None
+        assert "Arrakis" in detail.description
+        assert (
+            detail.cover_image_url
+            == "https://covers.openlibrary.org/b/id/8314396-L.jpg"
+        )
+        assert detail.isbns == []
+        assert detail.contributors == []
+
+    @respx.mock
+    async def test_by_work_key_returns_none_when_not_found(self, session: AsyncSession):
+        respx.get("https://openlibrary.org/works/OL0000000W.json").mock(
+            return_value=httpx.Response(404)
+        )
+        adapter = OpenLibraryAdapter()
+
+        detail = await adapter.get_detail("/works/OL0000000W", session)
+
+        assert detail is None
+
+    @respx.mock
+    async def test_by_isbn_falls_back_to_isbn_endpoint(self, session: AsyncSession):
+        respx.get("https://openlibrary.org/isbn/9780441013593.json").mock(
+            return_value=httpx.Response(
+                200, json=_load_fixture("isbn_9780441013593.json")
+            )
+        )
+        respx.get("https://openlibrary.org/works/OL893415W.json").mock(
+            return_value=httpx.Response(200, json=_load_fixture("work_OL893415W.json"))
+        )
+        adapter = OpenLibraryAdapter()
+
+        detail = await adapter.get_detail("9780441013593", session)
+
+        assert detail is not None
+        assert detail.title == "Dune"
+
+
 class TestRegistry:
     def test_get_adapter_returns_open_library_instance(self):
         adapter = get_adapter("open_library")
