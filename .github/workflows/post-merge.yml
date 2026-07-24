@@ -83,6 +83,8 @@ jobs:
             -e POSTGRES_USER="$POSTGRES_USER" -e POSTGRES_PASSWORD="$POSTGRES_PASSWORD" -e POSTGRES_DB="$POSTGRES_DB" \
             -p 5432:5432 postgres:17-alpine
           until docker exec coverage-badge-postgres pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do sleep 1; done
+          docker run -d --name coverage-badge-redis -p 6379:6379 redis:7-alpine
+          until docker exec coverage-badge-redis redis-cli ping | grep -q PONG; do sleep 1; done
           printf 'POSTGRES_HOST=%s\n' "$POSTGRES_HOST" >> .env
           printf 'POSTGRES_USER=%s\n' "$POSTGRES_USER" >> .env
           printf 'POSTGRES_PASSWORD=%s\n' "$POSTGRES_PASSWORD" >> .env
