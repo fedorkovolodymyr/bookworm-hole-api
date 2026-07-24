@@ -22,6 +22,12 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB" --health-interval 2s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 2s --health-timeout 5s --health-retries 5
     steps:
       - uses: actions/checkout@v7
       - name: Install uv
@@ -57,7 +63,9 @@ jobs:
       - name: Apply migrations
         run: task alembic-upgrade
       - name: Test
-        run: task test | tee test-output.txt
+        run: |
+          set -o pipefail
+          task test | tee test-output.txt
       - name: Coverage summary
         if: always()
         run: |
